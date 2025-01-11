@@ -443,7 +443,7 @@ var SUPPORTED_LANGUAGES = {
  "left-stick-deadzone": "Left stick deadzone",
  "left-trigger-range": "Left trigger range",
  "limit-fps": "Limit FPS",
- "load-failed-message": "Failed to run LobbyCore Press Power ON/OFF",
+ "load-failed-message": "Failed to run LobbyCore Please Refresh",
  "loading-screen": "Loading screen",
  "local-co-op": "Local co-op",
  "lowest-quality": "Lowest quality",
