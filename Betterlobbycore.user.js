@@ -3313,10 +3313,7 @@ class MkbPopup {
             label: t("manage"),
             icon: BxIcon.MANAGE,
             style: 64,
-            onClick: () => {
-                let dialog = SettingsDialog.getInstance();
-                dialog.focusTab("mkb"), dialog.show();
-            }
+
         }))), document.documentElement.appendChild(this.$popup);
     }
     reset() {
@@ -8554,7 +8551,7 @@ class HeaderSection {
                 let PREF_LATEST_VERSION = getGlobalPref("version.latest");
                 if (!SCRIPT_VERSION.includes("beta") && PREF_LATEST_VERSION && PREF_LATEST_VERSION !== SCRIPT_VERSION) $btnSettings.setAttribute("data-update-available", "true");
             } else if (status === "unavailable") {
-                if (STATES.supportedRegion = !1, document.querySelector("div[class^=UnsupportedMarketPage-module__container]")) SettingsDialog.getInstance().hide();
+
             }
             $btnSettings.classList.remove("bx-gone");
         });
@@ -8972,7 +8969,7 @@ class GuideMenu {
                     label: t("better-xcloud"),
                     icon: BxIcon.BETTER_XCLOUD,
                     style: 128 | 64 | 1
-                  
+
                 }),
                 closeApp: AppInterface && createButton({
                     icon: BxIcon.POWER,
@@ -10565,7 +10562,7 @@ class StreamUiHandler {
             },
             $btnStreamSettings = StreamUiHandler.$btnStreamSettings;
         if (typeof $btnStreamSettings === "undefined") $btnStreamSettings = StreamUiHandler.cloneStreamHudButton($orgButton, t("better-xcloud"), BxIcon.BETTER_XCLOUD), $btnStreamSettings?.addEventListener("click", (e) => {
-            hideGripHandle(), e.preventDefault(), SettingsDialog.getInstance().show();
+            hideGripHandle(), e.preventDefault()
         }), StreamUiHandler.$btnStreamSettings = $btnStreamSettings;
         let streamStats = StreamStats.getInstance(),
             $btnStreamStats = StreamUiHandler.$btnStreamStats;
