@@ -9,6 +9,8 @@
 // @match        https://www.xbox.com/*/auth/msa?*loggedIn*
 // @run-at       document-start
 // @grant        none
+// @updateURL    https://raw.githubusercontent.com/redphx/better-xcloud/typescript/dist/better-xcloud.meta.js
+// @downloadURL  https://github.com/redphx/better-xcloud/releases/latest/download/better-xcloud.user.js
 // ==/UserScript==
 "use strict";
 class BxLogger {
@@ -6118,6 +6120,9 @@ var SHORTCUT_ACTIONS = {
         "ta.open": [t("true-achievements"), t("show")]
     }
 };
+
+
+
 class ControllerShortcutsManagerDialog extends BaseProfileManagerDialog {
     static instance;
     static getInstance = () => ControllerShortcutsManagerDialog.instance ?? (ControllerShortcutsManagerDialog.instance = new ControllerShortcutsManagerDialog(t("controller-shortcuts")));
@@ -8245,10 +8250,8 @@ class ShortcutHandler {
     static runAction(action) {
         switch (action) {
             case "bx.settings.show":
-                SettingsDialog.getInstance().show();
                 break;
             case "stream.screenshot.capture":
-                ScreenshotManager.getInstance().takeScreenshot();
                 break;
             case "stream.video.toggle":
                 RendererShortcut.toggleVisibility();
@@ -8291,6 +8294,8 @@ class ShortcutHandler {
         }
     }
 }
+
+
 class ControllerShortcut {
     static buttonsCache = {};
     static buttonsStatus = {};
@@ -8538,8 +8543,8 @@ class HeaderSection {
         let $btnSettings = this.$btnSettings = createButton({
             classes: ["bx-header-settings-button", "bx-gone"],
             label: t("better-xcloud"),
-            style: 16 | 32 | 64 | 256,
-            onClick: (e) => SettingsDialog.getInstance().show()
+            style: 16 | 32 | 64 | 256
+
         });
         this.$buttonsWrapper = CE("div", !1, getGlobalPref("xhome.enabled") ? this.$btnRemotePlay : null, this.$btnSettings), BxEventBus.Script.on("xcloud.server", ({
             status
@@ -8549,7 +8554,7 @@ class HeaderSection {
                 let PREF_LATEST_VERSION = getGlobalPref("version.latest");
                 if (!SCRIPT_VERSION.includes("beta") && PREF_LATEST_VERSION && PREF_LATEST_VERSION !== SCRIPT_VERSION) $btnSettings.setAttribute("data-update-available", "true");
             } else if (status === "unavailable") {
-                if (STATES.supportedRegion = !1, document.querySelector("div[class^=UnsupportedMarketPage-module__container]")) SettingsDialog.getInstance().show();
+                if (STATES.supportedRegion = !1, document.querySelector("div[class^=UnsupportedMarketPage-module__container]")) SettingsDialog.getInstance().hide();
             }
             $btnSettings.classList.remove("bx-gone");
         });
@@ -8966,12 +8971,8 @@ class GuideMenu {
                 scriptSettings: createButton({
                     label: t("better-xcloud"),
                     icon: BxIcon.BETTER_XCLOUD,
-                    style: 128 | 64 | 1,
-                    onClick: () => {
-                        BxEventBus.Script.once("dialog.dismissed", () => {
-                            setTimeout(() => SettingsDialog.getInstance().show(), 50);
-                        }), this.closeGuideMenu();
-                    }
+                    style: 128 | 64 | 1
+                  
                 }),
                 closeApp: AppInterface && createButton({
                     icon: BxIcon.POWER,
