@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         Better xCloud
 // @namespace    https://github.com/redphx
-// @version      6.4.3
+// @version      6.7.0
 // @description  Improve Xbox Cloud Gaming (xCloud) experience
 // @author       redphx
 // @license      MIT
 // @match        https://www.xbox.com/*/play*
 // @match        https://www.xbox.com/*/auth/msa?*loggedIn*
+// @exclude      https://www.xbox.com/*/xbox-game-pass/play-day-one
 // @run-at       document-start
 // @grant        none
-// @updateURL    https://raw.githubusercontent.com/redphx/better-xcloud/typescript/dist/better-xcloud.meta.js
 // @downloadURL  https://github.com/redphx/better-xcloud/releases/latest/download/better-xcloud.user.js
 // ==/UserScript==
 "use strict";
@@ -43,8 +43,8 @@ if (!BX_FLAGS.DeviceInfo.userAgent) BX_FLAGS.DeviceInfo.userAgent = window.navig
 BxLogger.info("BxFlags", BX_FLAGS);
 var NATIVE_FETCH = window.fetch;
 var ALL_PREFS = {
-    global: ["audio.mic.onPlaying", "audio.volume.booster.enabled", "block.features", "block.tracking", "gameBar.position", "game.fortnite.forceConsole", "loadingScreen.gameArt.show", "loadingScreen.rocket", "loadingScreen.waitTime.show", "mkb.enabled", "mkb.cursor.hideIdle", "nativeMkb.forcedGames", "nativeMkb.mode", "xhome.enabled", "xhome.video.resolution", "screenshot.applyFilters", "server.bypassRestriction", "server.ipv6.prefer", "server.region", "stream.video.codecProfile", "stream.video.combineAudio", "stream.video.maxBitrate", "stream.locale", "stream.video.resolution", "touchController.autoOff", "touchController.opacity.default", "touchController.mode", "touchController.style.custom", "touchController.style.standard", "ui.controllerFriendly", "ui.controllerStatus.show", "ui.feedbackDialog.disabled", "ui.gameCard.waitTime.show", "ui.hideSections", "ui.systemMenu.hideHandle", "ui.imageQuality", "ui.layout", "ui.reduceAnimations", "ui.hideScrollbar", "ui.streamMenu.simplify", "ui.splashVideo.skip", "ui.theme", "version.current", "version.lastCheck", "version.latest", "bx.locale", "userAgent.profile"],
-    stream: ["audio.volume", "controller.pollingRate", "controller.settings", "deviceVibration.intensity", "deviceVibration.mode", "keyboardShortcuts.preset.inGameId", "localCoOp.enabled", "mkb.p1.preset.mappingId", "mkb.p1.slot", "mkb.p2.preset.mappingId", "mkb.p2.slot", "nativeMkb.scroll.sensitivityX", "nativeMkb.scroll.sensitivityY", "stats.colors", "stats.items", "stats.opacity.all", "stats.opacity.background", "stats.position", "stats.quickGlance.enabled", "stats.showWhenPlaying", "stats.textSize", "video.brightness", "video.contrast", "video.maxFps", "video.player.type", "video.position", "video.player.powerPreference", "video.processing", "video.ratio", "video.saturation", "video.processing.sharpness"]
+    global: ["audio.mic.onPlaying", "audio.volume.booster.enabled", "block.features", "block.tracking", "gameBar.position", "game.fortnite.forceConsole", "loadingScreen.gameArt.show", "loadingScreen.rocket", "loadingScreen.waitTime.show", "mkb.enabled", "mkb.cursor.hideIdle", "nativeMkb.forcedGames", "nativeMkb.mode", "xhome.video.resolution", "xhome.ipv6.prefer", "screenshot.applyFilters", "server.bypassRestriction", "server.ipv6.prefer", "server.region", "stream.video.codecProfile", "stream.video.combineAudio", "stream.video.maxBitrate", "stream.locale", "stream.video.resolution", "touchController.autoOff", "touchController.opacity.default", "touchController.mode", "touchController.style.custom", "touchController.style.standard", "ui.controllerFriendly", "ui.controllerStatus.show", "ui.feedbackDialog.disabled", "ui.gameCard.waitTime.show", "ui.hideSections", "ui.systemMenu.hideHandle", "ui.imageQuality", "ui.layout", "ui.reduceAnimations", "ui.hideScrollbar", "ui.streamMenu.simplify", "ui.splashVideo.skip", "ui.theme", "version.current", "version.lastCheck", "version.latest", "bx.locale", "userAgent.profile"],
+    stream: ["audio.volume", "controller.pollingRate", "controller.settings", "deviceVibration.intensity", "deviceVibration.mode", "keyboardShortcuts.preset.inGameId", "localCoOp.enabled", "mkb.p1.preset.mappingId", "mkb.p1.slot", "mkb.p2.preset.mappingId", "mkb.p2.slot", "nativeMkb.scroll.sensitivityX", "nativeMkb.scroll.sensitivityY", "stats.colors", "stats.items", "stats.opacity.all", "stats.opacity.background", "stats.position", "stats.quickGlance.enabled", "stats.showWhenPlaying", "stats.textSize", "video.brightness", "video.contrast", "video.maxFps", "video.player.type", "video.position", "video.player.powerPreference", "video.processing", "video.processing.mode", "video.ratio", "video.saturation", "video.processing.sharpness"]
 };
 var SMART_TV_UNIQUE_ID = "FC4A1DA2-711C-4E9C-BC7F-047AF8A672EA",
     CHROMIUM_VERSION = "125.0.0.0";
@@ -117,7 +117,7 @@ class UserAgent {
         });
     }
 }
-var SCRIPT_VERSION = "6.4.3",
+var SCRIPT_VERSION = "6.7.0",
     SCRIPT_VARIANT = "full",
     AppInterface = window.AppInterface;
 UserAgent.init();
@@ -251,7 +251,7 @@ class BxEventBus {
         if (AppInterface) try {
             if (event in this.appJsInterfaces) {
                 let method = this.appJsInterfaces[event];
-                AppInterface[method] && AppInterface[method]();
+                if (method && method in AppInterface) AppInterface[method]();
             } else AppInterface.onEventBus(this.group + "." + event);
         } catch (e) {
             console.log(e);
@@ -320,6 +320,7 @@ class GhPagesUtils {
 var SUPPORTED_LANGUAGES = {
         "en-US": "English (US)",
         "ca-CA": "Català",
+        "cs-CZ": "čeština",
         "da-DK": "dansk",
         "de-DE": "Deutsch",
         "en-ID": "Bahasa Indonesia",
@@ -360,7 +361,7 @@ var SUPPORTED_LANGUAGES = {
         "background-opacity": "Background opacity",
         battery: "Battery",
         "battery-saving": "Battery saving",
-        "better-xcloud": "LobbyCore",
+        "better-xcloud": "BOTS",
         "bitrate-audio-maximum": "Maximum audio bitrate",
         "bitrate-video-maximum": "Maximum video bitrate",
         bottom: "Bottom",
@@ -372,16 +373,15 @@ var SUPPORTED_LANGUAGES = {
         "browser-unsupported-feature": "Your browser doesn't support this feature",
         "button-xbox": "Xbox button",
         "bypass-region-restriction": "Bypass region restriction",
-        "can-stream-xbox-360-games": "Can stream Xbox 360 games",
         cancel: "Cancel",
-        "cant-stream-xbox-360-games": "Can't stream Xbox 360 games",
         center: "Center",
         chat: "Chat",
         "clarity-boost": "Clarity boost",
+        "clarity-boost-mode": "Clarity boost mode",
         "clarity-boost-warning": "These settings don't work when the Clarity Boost mode is ON",
         clear: "Clear",
         "clear-data": "Clear data",
-        "clear-data-confirm": "Do you want to clear all Better xCloud settings and data?",
+        "clear-data-confirm": "Do you want to clear all BOTS settings and data?",
         "clear-data-success": "Data cleared! Refresh the page to apply the changes.",
         clock: "Clock",
         close: "Close",
@@ -473,7 +473,7 @@ var SUPPORTED_LANGUAGES = {
         "in-game-keyboard-shortcuts": "In-game keyboard shortcuts",
         "in-game-shortcuts": "In-game shortcuts",
         increase: "Increase",
-        "install-android": "Better xCloud app for Android",
+        "install-android": "Bots xCloud app for Android",
         invites: "Invites",
         japan: "Japan",
         jitter: "Jitter",
@@ -487,7 +487,7 @@ var SUPPORTED_LANGUAGES = {
         "left-stick-deadzone": "Left stick deadzone",
         "left-trigger-range": "Left trigger range",
         "limit-fps": "Limit FPS",
-        "load-failed-message": "Failed to run LobbyCore",
+        "load-failed-message": "Failed to run, please refresh",
         "loading-screen": "Loading screen",
         "local-co-op": "Local co-op",
         "lowest-quality": "Lowest quality",
@@ -507,7 +507,7 @@ var SUPPORTED_LANGUAGES = {
         name: "Name",
         "native-mkb": "Native Mouse & Keyboard",
         new: "New",
-        "new-version-available": [e => `Version ${e.version} available`, e => `Versió ${e.version} disponible`, , e => `Version ${e.version} verfügbar`, e => `Versi ${e.version} tersedia`, e => `Versión ${e.version} disponible`, e => `Version ${e.version} disponible`, e => `Disponibile la versione ${e.version}`, e => `Ver ${e.version} が利用可能です`, e => `${e.version} 버전 사용가능`, e => `Dostępna jest nowa wersja ${e.version}`, e => `Versão ${e.version} disponível`, e => `Версия ${e.version} доступна`, e => `เวอร์ชัน ${e.version} พร้อมใช้งานแล้ว`, e => `${e.version} sayılı yeni sürüm mevcut`, e => `Доступна версія ${e.version}`, e => `Đã có phiên bản ${e.version}`, e => `版本 ${e.version} 可供更新`, e => `已可更新為 ${e.version} 版`],
+        "new-version-available": [e => `Version ${e.version} available`, e => `Versió ${e.version} disponible`, e => `Verze ${e.version} dostupná`, , e => `Version ${e.version} verfügbar`, e => `Versi ${e.version} tersedia`, e => `Versión ${e.version} disponible`, e => `Version ${e.version} disponible`, e => `Disponibile la versione ${e.version}`, e => `Ver ${e.version} が利用可能です`, e => `${e.version} 버전 사용가능`, e => `Dostępna jest nowa wersja ${e.version}`, e => `Versão ${e.version} disponível`, e => `Версия ${e.version} доступна`, e => `เวอร์ชัน ${e.version} พร้อมใช้งานแล้ว`, e => `${e.version} sayılı yeni sürüm mevcut`, e => `Доступна версія ${e.version}`, e => `Đã có phiên bản ${e.version}`, e => `版本 ${e.version} 可供更新`, e => `已可更新為 ${e.version} 版`],
         "no-consoles-found": "No consoles found",
         "no-controllers-connected": "No controllers connected",
         normal: "Normal",
@@ -519,6 +519,7 @@ var SUPPORTED_LANGUAGES = {
         "only-supports-some-games": "Only supports some games",
         opacity: "Opacity",
         other: "Other",
+        performance: "Performance",
         playing: "Playing",
         playtime: "Playtime",
         poland: "Poland",
@@ -532,11 +533,12 @@ var SUPPORTED_LANGUAGES = {
         press: "Press",
         "press-any-button": "Press any button...",
         "press-esc-to-cancel": "Press Esc to cancel",
-        "press-key-to-toggle-mkb": [e => `Press ${e.key} to toggle this feature`, e => `Premeu ${e.key} per alternar aquesta funció`, e => `Tryk på ${e.key} for at slå denne funktion til`, e => `${e.key}: Funktion an-/ausschalten`, e => `Tekan ${e.key} untuk mengaktifkan fitur ini`, e => `Pulsa ${e.key} para alternar esta función`, e => `Appuyez sur ${e.key} pour activer cette fonctionnalité`, e => `Premi ${e.key} per attivare questa funzionalità`, e => `${e.key} でこの機能を切替`, e => `${e.key} 키를 눌러 이 기능을 켜고 끄세요`, e => `Naciśnij ${e.key} aby przełączyć tę funkcję`, e => `Pressione ${e.key} para alternar este recurso`, e => `Нажмите ${e.key} для переключения этой функции`, e => `กด ${e.key} เพื่อสลับคุณสมบัตินี้`, e => `Etkinleştirmek için ${e.key} tuşuna basın`, e => `Натисніть ${e.key} щоб перемкнути цю функцію`, e => `Nhấn ${e.key} để bật/tắt tính năng này`, e => `按下 ${e.key} 来切换此功能`, e => `按下 ${e.key} 來啟用此功能`],
+        "press-key-to-toggle-mkb": [e => `Press ${e.key} to toggle this feature`, e => `Premeu ${e.key} per alternar aquesta funció`, e => `Zmáčknete ${e.key} pro přepnutí této funkce`, e => `Tryk på ${e.key} for at slå denne funktion til`, e => `${e.key}: Funktion an-/ausschalten`, e => `Tekan ${e.key} untuk mengaktifkan fitur ini`, e => `Pulsa ${e.key} para alternar esta función`, e => `Appuyez sur ${e.key} pour activer cette fonctionnalité`, e => `Premi ${e.key} per attivare questa funzionalità`, e => `${e.key} でこの機能を切替`, e => `${e.key} 키를 눌러 이 기능을 켜고 끄세요`, e => `Naciśnij ${e.key} aby przełączyć tę funkcję`, e => `Pressione ${e.key} para alternar este recurso`, e => `Нажмите ${e.key} для переключения этой функции`, e => `กด ${e.key} เพื่อสลับคุณสมบัตินี้`, e => `Etkinleştirmek için ${e.key} tuşuna basın`, e => `Натисніть ${e.key} щоб перемкнути цю функцію`, e => `Nhấn ${e.key} để bật/tắt tính năng này`, e => `按下 ${e.key} 来切换此功能`, e => `按下 ${e.key} 來啟用此功能`],
         "press-to-bind": "Press a key or do a mouse click to bind...",
         "prompt-preset-name": "Preset's name:",
+        quality: "Quality",
         recommended: "Recommended",
-        "recommended-settings-for-device": [e => `Recommended settings for ${e.device}`, e => `Configuració recomanada per a ${e.device}`, , e => `Empfohlene Einstellungen für ${e.device}`, e => `Rekomendasi pengaturan untuk ${e.device}`, e => `Ajustes recomendados para ${e.device}`, e => `Paramètres recommandés pour ${e.device}`, e => `Configurazioni consigliate per ${e.device}`, e => `${e.device} の推奨設定`, e => `다음 기기에서 권장되는 설정: ${e.device}`, e => `Zalecane ustawienia dla ${e.device}`, e => `Configurações recomendadas para ${e.device}`, e => `Рекомендуемые настройки для ${e.device}`, e => `การตั้งค่าที่แนะนำสำหรับ ${e.device}`, e => `${e.device} için önerilen ayarlar`, e => `Рекомендовані налаштування для ${e.device}`, e => `Cấu hình được đề xuất cho ${e.device}`, e => `${e.device} 的推荐设置`, e => `${e.device} 推薦的設定`],
+        "recommended-settings-for-device": [e => `Recommended settings for ${e.device}`, e => `Configuració recomanada per a ${e.device}`, , , e => `Empfohlene Einstellungen für ${e.device}`, e => `Rekomendasi pengaturan untuk ${e.device}`, e => `Ajustes recomendados para ${e.device}`, e => `Paramètres recommandés pour ${e.device}`, e => `Configurazioni consigliate per ${e.device}`, e => `${e.device} の推奨設定`, e => `다음 기기에서 권장되는 설정: ${e.device}`, e => `Zalecane ustawienia dla ${e.device}`, e => `Configurações recomendadas para ${e.device}`, e => `Рекомендуемые настройки для ${e.device}`, e => `การตั้งค่าที่แนะนำสำหรับ ${e.device}`, e => `${e.device} için önerilen ayarlar`, e => `Рекомендовані налаштування для ${e.device}`, e => `Cấu hình được đề xuất cho ${e.device}`, e => `${e.device} 的推荐设置`, e => `${e.device} 推薦的設定`],
         "reduce-animations": "Reduce UI animations",
         region: "Region",
         "reload-page": "Reload page",
@@ -569,6 +571,7 @@ var SUPPORTED_LANGUAGES = {
         "separate-touch-controller": "Separate Touch controller & Controller #1",
         "separate-touch-controller-note": "Touch controller is Player 1, Controller #1 is Player 2",
         server: "Server",
+        "server-list-error": "Can't get the server list",
         "server-locations": "Server locations",
         settings: "Settings",
         "settings-for": "Settings for",
@@ -618,6 +621,7 @@ var SUPPORTED_LANGUAGES = {
         "tc-custom-layout-style": "Custom layout's button style",
         "tc-muted-colors": "Muted colors",
         "tc-standard-layout-style": "Standard layout's button style",
+        "test-controller": "Test controller",
         "text-size": "Text size",
         theme: "Theme",
         toggle: "Toggle",
@@ -627,7 +631,7 @@ var SUPPORTED_LANGUAGES = {
         "top-left": "Top-left",
         "top-right": "Top-right",
         "touch-control-layout": "Touch control layout",
-        "touch-control-layout-by": [e => `Touch control layout by ${e.name}`, e => `Format del control tàctil per ${e.name}`, e => `Touch-kontrol layout af ${e.name}`, e => `Touch-Steuerungslayout von ${e.name}`, e => `Tata letak Sentuhan layar oleh ${e.name}`, e => `Disposición del control táctil por ${e.nombre}`, e => `Disposition du contrôleur tactile par ${e.name}`, e => `Configurazione dei comandi su schermo creata da ${e.name}`, e => `タッチ操作レイアウト作成者: ${e.name}`, e => `${e.name} 제작, 터치 컨트롤 레이아웃`, e => `Układ sterowania dotykowego stworzony przez ${e.name}`, e => `Disposição de controle por toque feito por ${e.name}`, e => `Сенсорная раскладка по ${e.name}`, e => `รูปแบบการควบคุมแบบสัมผัสโดย ${e.name}`, e => `${e.name} kişisinin dokunmatik kontrolcü tuş şeması`, e => `Розташування сенсорного керування від ${e.name}`, e => `Bố cục điều khiển cảm ứng tạo bởi ${e.name}`, e => `由 ${e.name} 提供的虚拟按键样式`, e => `觸控遊玩佈局由 ${e.name} 提供`],
+        "touch-control-layout-by": [e => `Touch control layout by ${e.name}`, e => `Format del control tàctil per ${e.name}`, e => `Rozložení dotykového ovládání ${e.name}`, e => `Touch-kontrol layout af ${e.name}`, e => `Touch-Steuerungslayout von ${e.name}`, e => `Tata letak Sentuhan layar oleh ${e.name}`, e => `Disposición del control táctil por ${e.nombre}`, e => `Disposition du contrôleur tactile par ${e.name}`, e => `Configurazione dei comandi su schermo creata da ${e.name}`, e => `タッチ操作レイアウト作成者: ${e.name}`, e => `${e.name} 제작, 터치 컨트롤 레이아웃`, e => `Układ sterowania dotykowego stworzony przez ${e.name}`, e => `Disposição de controle por toque feito por ${e.name}`, e => `Сенсорная раскладка по ${e.name}`, e => `รูปแบบการควบคุมแบบสัมผัสโดย ${e.name}`, e => `${e.name} kişisinin dokunmatik kontrolcü tuş şeması`, e => `Розташування сенсорного керування від ${e.name}`, e => `Bố cục điều khiển cảm ứng tạo bởi ${e.name}`, e => `由 ${e.name} 提供的虚拟按键样式`, e => `觸控遊玩佈局由 ${e.name} 提供`],
         "touch-controller": "Touch controller",
         "true-achievements": "TrueAchievements",
         ui: "UI",
@@ -661,7 +665,9 @@ var SUPPORTED_LANGUAGES = {
         "waiting-for-input": "Waiting for input...",
         wallpaper: "Wallpaper",
         webgl2: "WebGL2",
-        webgpu: "WebGPU"
+        webgpu: "WebGPU",
+        "xbox-360-games": "Xbox 360 games",
+        "xbox-apps": "Xbox apps"
     };
 class Translations {
     static EN_US = "en-US";
@@ -1152,44 +1158,6 @@ class BaseSettingsStorage {
         return !1;
     }
 }
-var BxIcon = {
-    BETTER_XCLOUD: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='none' fill-rule='evenodd' viewBox='0 0 32 32'><clipPath id='svg-bx-logo'><path d='M0 0h32v32H0z'/></clipPath><g clip-path='url(#svg-bx-logo)'><path d='M19.959 18.286l3.959 2.285-3.959 2.286V32L16 29.714v-9.143l3.959-2.285zM16 16V6.857l3.959-2.286 3.959 2.286-3.959 2.286v9.143L16 16zm-3.959-2.286L16 16l-3.959 2.286v9.143l-3.959-2.286V16l3.959-2.286zM8.082 2.286L12.041 0 16 2.286l-3.959 2.285v9.143l-3.959-2.285V2.286zm8.846 19.535c-.171-.098-.309-.018-.309.179s.138.437.309.536.309.018.309-.179-.138-.437-.309-.536zm0-13.714c-.171-.098-.309-.018-.309.179s.138.437.309.535.309.019.309-.178-.138-.437-.309-.536zM9.01 17.25c-.171-.099-.309-.019-.309.179s.138.437.309.535.309.019.309-.178-.138-.437-.309-.536zm0-13.714c-.171-.099-.309-.019-.309.178s.138.437.309.536.309.019.309-.179-.138-.437-.309-.535z' fill='#fff'/></g></svg>",
-    TRUE_ACHIEVEMENTS: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='nons' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M2.497 14.127c.781-6.01 5.542-10.849 11.551-11.708V0C6.634.858.858 6.712 0 14.127h2.497zM17.952 2.419V0C25.366.858 31.142 6.712 32 14.127h-2.497c-.781-6.01-5.542-10.849-11.551-11.708zM2.497 17.873c.781 6.01 5.542 10.849 11.551 11.708V32C6.634 31.142.858 25.288 0 17.873h2.497zm27.006 0H32C31.142 25.288 25.366 31.142 17.952 32v-2.419c6.009-.859 10.77-5.698 11.551-11.708zm-19.2-4.527h2.028a.702.702 0 1 0 0-1.404h-2.107a1.37 1.37 0 0 1-1.326-1.327V9.21a.7.7 0 0 0-.703-.703c-.387 0-.703.316-.703.7v1.408c.079 1.483 1.25 2.731 2.811 2.731zm2.809 7.337h-2.888a1.37 1.37 0 0 1-1.326-1.327v-4.917c0-.387-.316-.703-.7-.703a.7.7 0 0 0-.706.703v4.917a2.77 2.77 0 0 0 2.732 2.732h2.81c.387 0 .702-.316.702-.7.078-.393-.234-.705-.624-.705zM25.6 19.2a.7.7 0 0 0-.702-.702c-.387 0-.703.316-.703.699v.081c0 .702-.546 1.326-1.248 1.326H19.98c-.702-.078-1.248-.624-1.248-1.326v-.312c0-.78.624-1.327 1.326-1.327h2.811a2.77 2.77 0 0 0 2.731-2.732v-.312a2.68 2.68 0 0 0-2.576-2.732h-4.76a.702.702 0 1 0 0 1.405h4.526a1.37 1.37 0 0 1 1.327 1.327v.234c0 .781-.624 1.327-1.327 1.327h-2.81a2.77 2.77 0 0 0-2.731 2.732v.312a2.77 2.77 0 0 0 2.731 2.732h2.967a2.74 2.74 0 0 0 2.575-2.732s.078.078.078 0z'/></svg>",
-    STREAM_SETTINGS: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g transform='matrix(.142357 0 0 .142357 -2.22021 -2.22164)' fill='none' stroke='#fff' stroke-width='16'><circle cx='128' cy='128' r='40'/><path d='M130.05 206.11h-4L94 224c-12.477-4.197-24.049-10.711-34.11-19.2l-.12-36c-.71-1.12-1.38-2.25-2-3.41L25.9 147.24a99.16 99.16 0 0 1 0-38.46l31.84-18.1c.65-1.15 1.32-2.29 2-3.41l.16-36C69.951 42.757 81.521 36.218 94 32l32 17.89h4L162 32c12.477 4.197 24.049 10.711 34.11 19.2l.12 36c.71 1.12 1.38 2.25 2 3.41l31.85 18.14a99.16 99.16 0 0 1 0 38.46l-31.84 18.1c-.65 1.15-1.32 2.29-2 3.41l-.16 36A104.59 104.59 0 0 1 162 224l-31.95-17.89z'/></g></svg>",
-    STREAM_STATS: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M1.181 24.55v-3.259c0-8.19 6.576-14.952 14.767-14.98H16c8.13 0 14.819 6.69 14.819 14.819v3.42c0 .625-.515 1.14-1.14 1.14H2.321c-.625 0-1.14-.515-1.14-1.14z'/><path d='M16 6.311v4.56M12.58 25.69l9.12-12.54m4.559 5.7h4.386m-29.266 0H5.74'/></svg>",
-    CLOSE: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M29.928,2.072L2.072,29.928'/><path d='M29.928,29.928L2.072,2.072'/></svg>",
-    CONTROLLER: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M19.193 12.807h3.193m-13.836 0h4.257'/><path d='M10.678 10.678v4.257'/><path d='M13.061 19.193l-5.602 6.359c-.698.698-1.646 1.09-2.633 1.09-2.044 0-3.725-1.682-3.725-3.725a3.73 3.73 0 0 1 .056-.646l2.177-11.194a6.94 6.94 0 0 1 6.799-5.721h11.722c3.795 0 6.918 3.123 6.918 6.918s-3.123 6.918-6.918 6.918h-8.793z'/><path d='M18.939 19.193l5.602 6.359c.698.698 1.646 1.09 2.633 1.09 2.044 0 3.725-1.682 3.725-3.725a3.73 3.73 0 0 0-.056-.646l-2.177-11.194'/></svg>",
-    CREATE_SHORTCUT: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M13.253 3.639c0-.758-.615-1.373-1.373-1.373H3.639c-.758 0-1.373.615-1.373 1.373v8.241c0 .758.615 1.373 1.373 1.373h8.241c.758 0 1.373-.615 1.373-1.373V3.639zm0 16.481c0-.758-.615-1.373-1.373-1.373H3.639c-.758 0-1.373.615-1.373 1.373v8.241c0 .758.615 1.373 1.373 1.373h8.241c.758 0 1.373-.615 1.373-1.373V20.12zm16.481 0c0-.758-.615-1.373-1.373-1.373H20.12c-.758 0-1.373.615-1.373 1.373v8.241c0 .758.615 1.373 1.373 1.373h8.241c.758 0 1.373-.615 1.373-1.373V20.12zM19.262 7.76h9.957'/><path d='M24.24 2.781v9.957'/></svg>",
-    DISPLAY: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M1.238 21.119c0 1.928 1.565 3.493 3.493 3.493H27.27c1.928 0 3.493-1.565 3.493-3.493V5.961c0-1.928-1.565-3.493-3.493-3.493H4.731c-1.928 0-3.493 1.565-3.493 3.493v15.158zm19.683 8.413H11.08'/></svg>",
-    EYE: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='none ' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><clipPath id='A'><path d='M0 0h32v32H0z'/></clipPath><g clip-path='url(#A)'><path d='M31.908 15.568c-.047-.105-1.176-2.611-3.687-5.121C24.876 7.101 20.651 5.333 16 5.333S7.124 7.101 3.779 10.447c-2.511 2.51-3.646 5.02-3.687 5.121-.123.276-.123.591 0 .867.047.105 1.176 2.609 3.687 5.12 3.345 3.344 7.57 5.112 12.221 5.112s8.876-1.768 12.221-5.112c2.511-2.511 3.64-5.015 3.687-5.12.123-.276.123-.591 0-.867zM16 24.533c-4.104 0-7.689-1.492-10.657-4.433-1.218-1.211-2.254-2.592-3.076-4.1.822-1.508 1.858-2.889 3.076-4.1C8.311 8.959 11.896 7.467 16 7.467s7.689 1.492 10.657 4.433c1.221 1.211 2.259 2.592 3.083 4.1-.961 1.795-5.149 8.533-13.74 8.533zM16 9.6c-3.511 0-6.4 2.889-6.4 6.4s2.889 6.4 6.4 6.4 6.4-2.889 6.4-6.4A6.44 6.44 0 0 0 16 9.6zm0 10.667A4.29 4.29 0 0 1 11.733 16 4.29 4.29 0 0 1 16 11.733 4.29 4.29 0 0 1 20.267 16 4.29 4.29 0 0 1 16 20.267z' fill-rule='nonzero'/></g></svg>",
-    EYE_SLASH: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='none ' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><clipPath id='A'><path d='M0 0h32v32H0z'/></clipPath><g clip-path='url(#A)'><path d='M6.123 3.549a1.07 1.07 0 0 0-.798-.359c-.585 0-1.067.482-1.067 1.067 0 .27.102.53.286.727l2.565 2.823C2.267 10.779.184 15.36.092 15.568c-.123.276-.123.591 0 .867.047.105 1.176 2.609 3.687 5.12 3.345 3.344 7.57 5.112 12.221 5.112a16.97 16.97 0 0 0 6.943-1.444l2.933 3.228c.202.228.493.359.798.359.585 0 1.067-.482 1.067-1.067a1.07 1.07 0 0 0-.286-.727L6.123 3.549zm6.31 10.112l5.556 6.114c-.612.322-1.294.49-1.986.49a4.29 4.29 0 0 1-4.267-4.266c0-.831.242-1.643.697-2.338zM16 24.533c-4.104 0-7.689-1.492-10.657-4.433A17.73 17.73 0 0 1 2.267 16c.625-1.172 2.621-4.452 6.313-6.584l2.4 2.633c-.878 1.125-1.356 2.512-1.356 3.939 0 3.511 2.89 6.4 6.4 6.4 1.221 0 2.416-.349 3.444-1.005l1.964 2.16a14.92 14.92 0 0 1-5.432.99zm.8-12.724a1.07 1.07 0 0 1-.867-1.048c0-.585.482-1.067 1.067-1.067a1.12 1.12 0 0 1 .2.019c2.784.54 4.896 2.863 5.169 5.686a1.07 1.07 0 0 1-.962 1.161c-.034.002-.067.002-.1 0a1.07 1.07 0 0 1-1.067-.968 4.29 4.29 0 0 0-3.44-3.783zm15.104 4.626c-.056.125-1.407 3.116-4.448 5.84a1.07 1.07 0 0 1-.724.283c-.585 0-1.067-.482-1.067-1.067a1.07 1.07 0 0 1 .368-.806A17.7 17.7 0 0 0 29.74 16a17.73 17.73 0 0 0-3.083-4.103C23.689 8.959 20.104 7.467 16 7.467a15.82 15.82 0 0 0-2.581.209 1.06 1.06 0 0 1-.186.016 1.07 1.07 0 0 1-1.067-1.066 1.07 1.07 0 0 1 .901-1.054A17.89 17.89 0 0 1 16 5.333c4.651 0 8.876 1.768 12.221 5.114 2.511 2.51 3.64 5.016 3.687 5.121.123.276.123.591 0 .867h-.004z' fill-rule='nonzero'/></g></svg>",
-    HOME: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M12.217 30.503V20.414h7.567v10.089h10.089V15.37a1.26 1.26 0 0 0-.369-.892L16.892 1.867a1.26 1.26 0 0 0-1.784 0L2.497 14.478a1.26 1.26 0 0 0-.369.892v15.133h10.089z'/></svg>",
-    LOCAL_CO_OP: "<svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round'><g><path d='M24.272 11.165h-3.294l-3.14 3.564c-.391.391-.922.611-1.476.611a2.1 2.1 0 0 1-2.087-2.088 2.09 2.09 0 0 1 .031-.362l1.22-6.274a3.89 3.89 0 0 1 3.81-3.206h6.57c1.834 0 3.439 1.573 3.833 3.295l1.205 6.185a2.09 2.09 0 0 1 .031.362 2.1 2.1 0 0 1-2.087 2.088c-.554 0-1.085-.22-1.476-.611l-3.14-3.564' fill='none' stroke='#fff' stroke-width='2'/><circle cx='22.625' cy='5.874' r='.879'/><path d='M11.022 24.415H7.728l-3.14 3.564c-.391.391-.922.611-1.476.611a2.1 2.1 0 0 1-2.087-2.088 2.09 2.09 0 0 1 .031-.362l1.22-6.274a3.89 3.89 0 0 1 3.81-3.206h6.57c1.834 0 3.439 1.573 3.833 3.295l1.205 6.185a2.09 2.09 0 0 1 .031.362 2.1 2.1 0 0 1-2.087 2.088c-.554 0-1.085-.22-1.476-.611l-3.14-3.564' fill='none' stroke='#fff' stroke-width='2'/><circle cx='9.375' cy='19.124' r='.879'/></g></svg>",
-    NATIVE_MKB: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g stroke-width='2.1'><path d='m15.817 6h-10.604c-2.215 0-4.013 1.798-4.013 4.013v12.213c0 2.215 1.798 4.013 4.013 4.013h11.21'/><path d='m5.698 20.617h1.124m-1.124-4.517h7.9m-7.881-4.5h7.9m-2.3 9h2.2'/></g><g stroke-width='2.13'><path d='m30.805 13.1c0-3.919-3.181-7.1-7.1-7.1s-7.1 3.181-7.1 7.1v6.4c0 3.919 3.182 7.1 7.1 7.1s7.1-3.181 7.1-7.1z'/><path d='m23.705 14.715v-4.753'/></g></svg>",
-    NEW: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M26.875 30.5H5.125c-.663 0-1.208-.545-1.208-1.208V2.708c0-.663.545-1.208 1.208-1.208h14.5l8.458 8.458v19.333c0 .663-.545 1.208-1.208 1.208z'/><path d='M19.625 1.5v8.458h8.458m-15.708 9.667h7.25'/><path d='M16 16v7.25'/></svg>",
-    MANAGE: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' viewBox='0 0 32 32'><path d='M10.417 30.271H2.97a1.25 1.25 0 0 1-1.241-1.241v-6.933c.001-.329.131-.644.363-.877L21.223 2.09c.481-.481 1.273-.481 1.754 0l6.933 6.928a1.25 1.25 0 0 1 0 1.755L10.417 30.271z'/><path d='M29.032 30.271H10.417m6.205-23.58l8.687 8.687'/></svg>",
-    COPY: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M1.498 6.772h23.73v23.73H1.498zm5.274-5.274h23.73v23.73'/></svg>",
-    TRASH: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M29.5 6.182h-27m9.818 7.363v9.818m7.364-9.818v9.818'/><path d='M27.045 6.182V29.5c0 .673-.554 1.227-1.227 1.227H6.182c-.673 0-1.227-.554-1.227-1.227V6.182m17.181 0V3.727a2.47 2.47 0 0 0-2.455-2.455h-7.364a2.47 2.47 0 0 0-2.455 2.455v2.455'/></svg>",
-    CURSOR_TEXT: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M16 7.3a5.83 5.83 0 0 1 5.8-5.8h2.9m0 29h-2.9a5.83 5.83 0 0 1-5.8-5.8'/><path d='M7.3 30.5h2.9a5.83 5.83 0 0 0 5.8-5.8V7.3a5.83 5.83 0 0 0-5.8-5.8H7.3'/><path d='M11.65 16h8.7'/></svg>",
-    POWER: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 2.445v12.91m7.746-11.619C27.631 6.27 30.2 10.37 30.2 15.355c0 7.79-6.41 14.2-14.2 14.2s-14.2-6.41-14.2-14.2c0-4.985 2.569-9.085 6.454-11.619'/></svg>",
-    QUESTION: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><g transform='matrix(.256867 0 0 .256867 -16.878964 -18.049342)'><circle cx='128' cy='180' r='12' fill='#fff'/><path d='M128 144v-8c17.67 0 32-12.54 32-28s-14.33-28-32-28-32 12.54-32 28v4' fill='none' stroke='#fff' stroke-width='16'/></g></svg>",
-    REFRESH: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M23.247 12.377h7.247V5.13'/><path d='M23.911 25.663a13.29 13.29 0 0 1-9.119 3.623C7.504 29.286 1.506 23.289 1.506 16S7.504 2.713 14.792 2.713a13.29 13.29 0 0 1 9.395 3.891l6.307 5.772'/></svg>",
-    REMOTE_PLAY: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><g transform='matrix(.492308 0 0 .581818 -14.7692 -11.6364)'><clipPath id='A'><path d='M30 20h65v55H30z'/></clipPath><g clip-path='url(#A)'><g transform='matrix(.395211 0 0 .334409 11.913 7.01124)'><g transform='matrix(.555556 0 0 .555556 57.8889 -20.2417)' fill='none' stroke='#fff' stroke-width='13.88'><path d='M200 140.564c-42.045-33.285-101.955-33.285-144 0M168 165c-23.783-17.3-56.217-17.3-80 0'/></g><g transform='matrix(-.555556 0 0 -.555556 200.111 262.393)'><g transform='matrix(1 0 0 1 0 11.5642)'><path d='M200 129c-17.342-13.728-37.723-21.795-58.636-24.198C111.574 101.378 80.703 109.444 56 129' fill='none' stroke='#fff' stroke-width='13.88'/></g><path d='M168 165c-23.783-17.3-56.217-17.3-80 0' fill='none' stroke='#fff' stroke-width='13.88'/></g><g transform='matrix(.75 0 0 .75 32 32)'><path d='M24 72h208v93.881H24z' fill='none' stroke='#fff' stroke-linejoin='miter' stroke-width='9.485'/><circle cx='188' cy='128' r='12' stroke-width='10' transform='matrix(.708333 0 0 .708333 71.8333 12.8333)'/><path d='M24.358 103.5h110' fill='none' stroke='#fff' stroke-linecap='butt' stroke-width='10.282'/></g></g></g></g></svg>",
-    CARET_LEFT: "<svg xmlns='http://www.w3.org/2000/svg' width='100%' stroke='#fff' fill='#fff' height='100%' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><path d='M6.755 1.924l-6 13.649c-.119.27-.119.578 0 .849l6 13.649c.234.533.857.775 1.389.541s.775-.857.541-1.389L2.871 15.997 8.685 2.773c.234-.533-.008-1.155-.541-1.389s-1.155.008-1.389.541z'/></svg>",
-    CARET_RIGHT: "<svg xmlns='http://www.w3.org/2000/svg' width='100%' stroke='#fff' fill='#fff' height='100%' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><path d='M2.685 1.924l6 13.649c.119.27.119.578 0 .849l-6 13.649c-.234.533-.857.775-1.389.541s-.775-.857-.541-1.389l5.813-13.225L.755 2.773c-.234-.533.008-1.155.541-1.389s1.155.008 1.389.541z'/></svg>",
-    SCREENSHOT: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g transform='matrix(.150985 0 0 .150985 -3.32603 -2.72209)' fill='none' stroke='#fff' stroke-width='16'><path d='M208 208H48c-8.777 0-16-7.223-16-16V80c0-8.777 7.223-16 16-16h32l16-24h64l16 24h32c8.777 0 16 7.223 16 16v112c0 8.777-7.223 16-16 16z'/><circle cx='128' cy='132' r='36'/></g></svg>",
-    SPEAKER_MUTED: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='none' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M5.462 3.4c-.205-.23-.499-.363-.808-.363-.592 0-1.079.488-1.079 1.08a1.08 1.08 0 0 0 .289.736l4.247 4.672H2.504a2.17 2.17 0 0 0-2.16 2.16v8.637a2.17 2.17 0 0 0 2.16 2.16h6.107l9.426 7.33a1.08 1.08 0 0 0 .662.227c.592 0 1.08-.487 1.08-1.079v-6.601l5.679 6.247a1.08 1.08 0 0 0 .808.363c.592 0 1.08-.487 1.08-1.079a1.08 1.08 0 0 0-.29-.736L5.462 3.4zm-2.958 8.285h5.398v8.637H2.504v-8.637zM17.62 26.752l-7.558-5.878V11.67l7.558 8.313v6.769zm5.668-8.607c1.072-1.218 1.072-3.063 0-4.281a1.08 1.08 0 0 1-.293-.74c0-.592.487-1.079 1.079-1.079a1.08 1.08 0 0 1 .834.393 5.42 5.42 0 0 1 0 7.137 1.08 1.08 0 0 1-.81.365c-.593 0-1.08-.488-1.08-1.08 0-.263.096-.517.27-.715zM12.469 7.888c-.147-.19-.228-.423-.228-.663a1.08 1.08 0 0 1 .417-.853l5.379-4.184a1.08 1.08 0 0 1 .662-.227c.593 0 1.08.488 1.08 1.08v10.105c0 .593-.487 1.08-1.08 1.08s-1.079-.487-1.079-1.08V5.255l-3.636 2.834c-.469.362-1.153.273-1.515-.196v-.005zm19.187 8.115a10.79 10.79 0 0 1-2.749 7.199 1.08 1.08 0 0 1-.793.347c-.593 0-1.08-.487-1.08-1.079 0-.26.094-.511.264-.708 2.918-3.262 2.918-8.253 0-11.516-.184-.2-.287-.461-.287-.733 0-.592.487-1.08 1.08-1.08a1.08 1.08 0 0 1 .816.373 10.78 10.78 0 0 1 2.749 7.197z' fill-rule='nonzero'/></svg>",
-    TOUCH_CONTROL_ENABLE: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><path d='M30.021 9.448a.89.89 0 0 0-.889-.889H2.909a.89.89 0 0 0-.889.889v13.146a.89.89 0 0 0 .889.888h26.223a.89.89 0 0 0 .889-.888V9.448z' fill='none' stroke='#fff' stroke-width='2.083'/><path d='M8.147 11.981l-.053-.001-.054.001c-.55.028-.988.483-.988 1.04v6c0 .575.467 1.042 1.042 1.042l.053-.001c.55-.028.988-.484.988-1.04v-6a1.04 1.04 0 0 0-.988-1.04z'/><path d='M11.147 14.981l-.054-.001h-6a1.04 1.04 0 1 0 0 2.083h6c.575 0 1.042-.467 1.042-1.042a1.04 1.04 0 0 0-.988-1.04z'/><circle cx='25.345' cy='18.582' r='2.561' fill='none' stroke='#fff' stroke-width='1.78' transform='matrix(1.17131 0 0 1.17131 -5.74235 -5.74456)'/></svg>",
-    TOUCH_CONTROL_DISABLE: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><g fill='none' stroke='#fff'><path d='M6.021 5.021l20 22' stroke-width='2'/><path d='M8.735 8.559H2.909a.89.89 0 0 0-.889.889v13.146a.89.89 0 0 0 .889.888h19.34m4.289 0h2.594a.89.89 0 0 0 .889-.888V9.448a.89.89 0 0 0-.889-.889H12.971' stroke-miterlimit='1.5' stroke-width='2.083'/></g><path d='M8.147 11.981l-.053-.001-.054.001c-.55.028-.988.483-.988 1.04v6c0 .575.467 1.042 1.042 1.042l.053-.001c.55-.028.988-.484.988-1.04v-6a1.04 1.04 0 0 0-.988-1.04z'/><path d='M11.147 14.981l-.054-.001h-6a1.04 1.04 0 1 0 0 2.083h6c.575 0 1.042-.467 1.042-1.042a1.04 1.04 0 0 0-.988-1.04z'/><circle cx='25.345' cy='18.582' r='2.561' fill='none' stroke='#fff' stroke-width='1.78' transform='matrix(1.17131 0 0 1.17131 -5.74235 -5.74456)'/></svg>",
-    MICROPHONE: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M21.368 6.875A5.37 5.37 0 0 0 16 1.507a5.37 5.37 0 0 0-5.368 5.368v8.588A5.37 5.37 0 0 0 16 20.831a5.37 5.37 0 0 0 5.368-5.368V6.875zM16 25.125v5.368m9.662-15.03c0 5.3-4.362 9.662-9.662 9.662s-9.662-4.362-9.662-9.662'/></svg>",
-    MICROPHONE_MUTED: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 25.125v5.368M5.265 4.728l21.471 23.618m-4.789-5.267c-1.698 1.326-3.793 2.047-5.947 2.047-5.3 0-9.662-4.362-9.662-9.662'/><path d='M25.662 15.463a9.62 9.62 0 0 1-.978 4.242m-5.64.187c-.895.616-1.957.943-3.043.939-2.945 0-5.368-2.423-5.368-5.368v-4.831m.442-5.896A5.38 5.38 0 0 1 16 1.507c2.945 0 5.368 2.423 5.368 5.368v8.588c0 .188-.01.375-.03.562'/></svg>",
-    BATTERY: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' stroke-miterlimit='2' viewBox='0 0 32 32'><path d='M24.774 6.71H3.097C1.398 6.71 0 8.108 0 9.806v12.387c0 1.699 1.398 3.097 3.097 3.097h21.677c1.699 0 3.097-1.398 3.097-3.097V9.806c0-1.699-1.398-3.097-3.097-3.097zm1.032 15.484a1.04 1.04 0 0 1-1.032 1.032H3.097a1.04 1.04 0 0 1-1.032-1.032V9.806a1.04 1.04 0 0 1 1.032-1.032h21.677a1.04 1.04 0 0 1 1.032 1.032v12.387zm-2.065-10.323v8.258a1.04 1.04 0 0 1-1.032 1.032H5.161a1.04 1.04 0 0 1-1.032-1.032v-8.258a1.04 1.04 0 0 1 1.032-1.032H22.71a1.04 1.04 0 0 1 1.032 1.032zm8.258 0v8.258a1.04 1.04 0 0 1-1.032 1.032 1.04 1.04 0 0 1-1.032-1.032v-8.258a1.04 1.04 0 0 1 1.032-1.032A1.04 1.04 0 0 1 32 11.871z' fill-rule='nonzero'/></svg>",
-    PLAYTIME: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g transform='matrix(.150026 0 0 .150026 -3.20332 -3.20332)' fill='none' stroke='#fff' stroke-width='16'><circle cx='128' cy='128' r='96'/><path d='M128 72v56h56'/></g></svg>",
-    SERVER: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M9.773 16c0-5.694 4.685-10.379 10.379-10.379S30.53 10.306 30.53 16s-4.685 10.379-10.379 10.379H8.735c-3.982-.005-7.256-3.283-7.256-7.265s3.28-7.265 7.265-7.265c.606 0 1.21.076 1.797.226' fill='none' stroke='#fff' stroke-width='2.076'/></svg>",
-    DOWNLOAD: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 19.955V1.5m14.5 18.455v9.227c0 .723-.595 1.318-1.318 1.318H2.818c-.723 0-1.318-.595-1.318-1.318v-9.227'/><path d='M22.591 13.364L16 19.955l-6.591-6.591'/></svg>",
-    UPLOAD: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 19.905V1.682m14.318 18.223v9.112a1.31 1.31 0 0 1-1.302 1.302H2.983a1.31 1.31 0 0 1-1.302-1.302v-9.112'/><path d='M9.492 8.19L16 1.682l6.508 6.508'/></svg>",
-    AUDIO: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M8.964 21.417h-6.5a1.09 1.09 0 0 1-1.083-1.083v-8.667a1.09 1.09 0 0 1 1.083-1.083h6.5L18.714 3v26l-9.75-7.583z'/><path d='M8.964 10.583v10.833m15.167-8.28a4.35 4.35 0 0 1 0 5.728M28.149 9.5a9.79 9.79 0 0 1 0 13'/></svg>"
-};
 
 function getSupportedCodecProfiles() {
     let options = {
@@ -1593,7 +1561,8 @@ class GlobalSettingsStorage extends BaseSettingsStorage {
                 friends: t("friends-followers"),
                 byog: t("stream-your-own-game"),
                 "notifications-invites": t("notifications") + ": " + t("invites"),
-                "notifications-achievements": t("notifications") + ": " + t("achievements")
+                "notifications-achievements": t("notifications") + ": " + t("achievements"),
+                "remote-play": t("remote-play")
             }
         },
         "userAgent.profile": {
@@ -1619,12 +1588,6 @@ class GlobalSettingsStorage extends BaseSettingsStorage {
             label: t("enable-volume-control"),
             default: !1
         },
-        "xhome.enabled": {
-            requiredVariants: "full",
-            label: t("enable-remote-play-feature"),
-            labelIcon: BxIcon.REMOTE_PLAY,
-            default: !1
-        },
         "xhome.video.resolution": {
             requiredVariants: "full",
             default: "1080p",
@@ -1633,6 +1596,10 @@ class GlobalSettingsStorage extends BaseSettingsStorage {
                 "1080p": "1080p",
                 "1080p-hq": "1080p (HQ)"
             }
+        },
+        "xhome.ipv6.prefer": {
+            requiredVariants: "full",
+            default: !1
         },
         "game.fortnite.forceConsole": {
             requiredVariants: "full",
@@ -1875,6 +1842,44 @@ class MkbMappingPresetsTable extends BasePresetsTable {
         BxLogger.info(this.LOG_TAG, "constructor()");
     }
 }
+var BxIcon = {
+    BETTER_XCLOUD: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='none' fill-rule='evenodd' viewBox='0 0 32 32'><clipPath id='svg-bx-logo'><path d='M0 0h32v32H0z'/></clipPath><g clip-path='url(#svg-bx-logo)'><path d='M19.959 18.286l3.959 2.285-3.959 2.286V32L16 29.714v-9.143l3.959-2.285zM16 16V6.857l3.959-2.286 3.959 2.286-3.959 2.286v9.143L16 16zm-3.959-2.286L16 16l-3.959 2.286v9.143l-3.959-2.286V16l3.959-2.286zM8.082 2.286L12.041 0 16 2.286l-3.959 2.285v9.143l-3.959-2.285V2.286zm8.846 19.535c-.171-.098-.309-.018-.309.179s.138.437.309.536.309.018.309-.179-.138-.437-.309-.536zm0-13.714c-.171-.098-.309-.018-.309.179s.138.437.309.535.309.019.309-.178-.138-.437-.309-.536zM9.01 17.25c-.171-.099-.309-.019-.309.179s.138.437.309.535.309.019.309-.178-.138-.437-.309-.536zm0-13.714c-.171-.099-.309-.019-.309.178s.138.437.309.536.309.019.309-.179-.138-.437-.309-.535z' fill='#fff'/></g></svg>",
+    TRUE_ACHIEVEMENTS: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='nons' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M2.497 14.127c.781-6.01 5.542-10.849 11.551-11.708V0C6.634.858.858 6.712 0 14.127h2.497zM17.952 2.419V0C25.366.858 31.142 6.712 32 14.127h-2.497c-.781-6.01-5.542-10.849-11.551-11.708zM2.497 17.873c.781 6.01 5.542 10.849 11.551 11.708V32C6.634 31.142.858 25.288 0 17.873h2.497zm27.006 0H32C31.142 25.288 25.366 31.142 17.952 32v-2.419c6.009-.859 10.77-5.698 11.551-11.708zm-19.2-4.527h2.028a.702.702 0 1 0 0-1.404h-2.107a1.37 1.37 0 0 1-1.326-1.327V9.21a.7.7 0 0 0-.703-.703c-.387 0-.703.316-.703.7v1.408c.079 1.483 1.25 2.731 2.811 2.731zm2.809 7.337h-2.888a1.37 1.37 0 0 1-1.326-1.327v-4.917c0-.387-.316-.703-.7-.703a.7.7 0 0 0-.706.703v4.917a2.77 2.77 0 0 0 2.732 2.732h2.81c.387 0 .702-.316.702-.7.078-.393-.234-.705-.624-.705zM25.6 19.2a.7.7 0 0 0-.702-.702c-.387 0-.703.316-.703.699v.081c0 .702-.546 1.326-1.248 1.326H19.98c-.702-.078-1.248-.624-1.248-1.326v-.312c0-.78.624-1.327 1.326-1.327h2.811a2.77 2.77 0 0 0 2.731-2.732v-.312a2.68 2.68 0 0 0-2.576-2.732h-4.76a.702.702 0 1 0 0 1.405h4.526a1.37 1.37 0 0 1 1.327 1.327v.234c0 .781-.624 1.327-1.327 1.327h-2.81a2.77 2.77 0 0 0-2.731 2.732v.312a2.77 2.77 0 0 0 2.731 2.732h2.967a2.74 2.74 0 0 0 2.575-2.732s.078.078.078 0z'/></svg>",
+    STREAM_SETTINGS: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g transform='matrix(.142357 0 0 .142357 -2.22021 -2.22164)' fill='none' stroke='#fff' stroke-width='16'><circle cx='128' cy='128' r='40'/><path d='M130.05 206.11h-4L94 224c-12.477-4.197-24.049-10.711-34.11-19.2l-.12-36c-.71-1.12-1.38-2.25-2-3.41L25.9 147.24a99.16 99.16 0 0 1 0-38.46l31.84-18.1c.65-1.15 1.32-2.29 2-3.41l.16-36C69.951 42.757 81.521 36.218 94 32l32 17.89h4L162 32c12.477 4.197 24.049 10.711 34.11 19.2l.12 36c.71 1.12 1.38 2.25 2 3.41l31.85 18.14a99.16 99.16 0 0 1 0 38.46l-31.84 18.1c-.65 1.15-1.32 2.29-2 3.41l-.16 36A104.59 104.59 0 0 1 162 224l-31.95-17.89z'/></g></svg>",
+    STREAM_STATS: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M1.181 24.55v-3.259c0-8.19 6.576-14.952 14.767-14.98H16c8.13 0 14.819 6.69 14.819 14.819v3.42c0 .625-.515 1.14-1.14 1.14H2.321c-.625 0-1.14-.515-1.14-1.14z'/><path d='M16 6.311v4.56M12.58 25.69l9.12-12.54m4.559 5.7h4.386m-29.266 0H5.74'/></svg>",
+    CLOSE: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M29.928,2.072L2.072,29.928'/><path d='M29.928,29.928L2.072,2.072'/></svg>",
+    CONTROLLER: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M19.193 12.807h3.193m-13.836 0h4.257'/><path d='M10.678 10.678v4.257'/><path d='M13.061 19.193l-5.602 6.359c-.698.698-1.646 1.09-2.633 1.09-2.044 0-3.725-1.682-3.725-3.725a3.73 3.73 0 0 1 .056-.646l2.177-11.194a6.94 6.94 0 0 1 6.799-5.721h11.722c3.795 0 6.918 3.123 6.918 6.918s-3.123 6.918-6.918 6.918h-8.793z'/><path d='M18.939 19.193l5.602 6.359c.698.698 1.646 1.09 2.633 1.09 2.044 0 3.725-1.682 3.725-3.725a3.73 3.73 0 0 0-.056-.646l-2.177-11.194'/></svg>",
+    CREATE_SHORTCUT: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M13.253 3.639c0-.758-.615-1.373-1.373-1.373H3.639c-.758 0-1.373.615-1.373 1.373v8.241c0 .758.615 1.373 1.373 1.373h8.241c.758 0 1.373-.615 1.373-1.373V3.639zm0 16.481c0-.758-.615-1.373-1.373-1.373H3.639c-.758 0-1.373.615-1.373 1.373v8.241c0 .758.615 1.373 1.373 1.373h8.241c.758 0 1.373-.615 1.373-1.373V20.12zm16.481 0c0-.758-.615-1.373-1.373-1.373H20.12c-.758 0-1.373.615-1.373 1.373v8.241c0 .758.615 1.373 1.373 1.373h8.241c.758 0 1.373-.615 1.373-1.373V20.12zM19.262 7.76h9.957'/><path d='M24.24 2.781v9.957'/></svg>",
+    DISPLAY: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M1.238 21.119c0 1.928 1.565 3.493 3.493 3.493H27.27c1.928 0 3.493-1.565 3.493-3.493V5.961c0-1.928-1.565-3.493-3.493-3.493H4.731c-1.928 0-3.493 1.565-3.493 3.493v15.158zm19.683 8.413H11.08'/></svg>",
+    EYE: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='none ' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><clipPath id='A'><path d='M0 0h32v32H0z'/></clipPath><g clip-path='url(#A)'><path d='M31.908 15.568c-.047-.105-1.176-2.611-3.687-5.121C24.876 7.101 20.651 5.333 16 5.333S7.124 7.101 3.779 10.447c-2.511 2.51-3.646 5.02-3.687 5.121-.123.276-.123.591 0 .867.047.105 1.176 2.609 3.687 5.12 3.345 3.344 7.57 5.112 12.221 5.112s8.876-1.768 12.221-5.112c2.511-2.511 3.64-5.015 3.687-5.12.123-.276.123-.591 0-.867zM16 24.533c-4.104 0-7.689-1.492-10.657-4.433-1.218-1.211-2.254-2.592-3.076-4.1.822-1.508 1.858-2.889 3.076-4.1C8.311 8.959 11.896 7.467 16 7.467s7.689 1.492 10.657 4.433c1.221 1.211 2.259 2.592 3.083 4.1-.961 1.795-5.149 8.533-13.74 8.533zM16 9.6c-3.511 0-6.4 2.889-6.4 6.4s2.889 6.4 6.4 6.4 6.4-2.889 6.4-6.4A6.44 6.44 0 0 0 16 9.6zm0 10.667A4.29 4.29 0 0 1 11.733 16 4.29 4.29 0 0 1 16 11.733 4.29 4.29 0 0 1 20.267 16 4.29 4.29 0 0 1 16 20.267z' fill-rule='nonzero'/></g></svg>",
+    EYE_SLASH: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='none ' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><clipPath id='A'><path d='M0 0h32v32H0z'/></clipPath><g clip-path='url(#A)'><path d='M6.123 3.549a1.07 1.07 0 0 0-.798-.359c-.585 0-1.067.482-1.067 1.067 0 .27.102.53.286.727l2.565 2.823C2.267 10.779.184 15.36.092 15.568c-.123.276-.123.591 0 .867.047.105 1.176 2.609 3.687 5.12 3.345 3.344 7.57 5.112 12.221 5.112a16.97 16.97 0 0 0 6.943-1.444l2.933 3.228c.202.228.493.359.798.359.585 0 1.067-.482 1.067-1.067a1.07 1.07 0 0 0-.286-.727L6.123 3.549zm6.31 10.112l5.556 6.114c-.612.322-1.294.49-1.986.49a4.29 4.29 0 0 1-4.267-4.266c0-.831.242-1.643.697-2.338zM16 24.533c-4.104 0-7.689-1.492-10.657-4.433A17.73 17.73 0 0 1 2.267 16c.625-1.172 2.621-4.452 6.313-6.584l2.4 2.633c-.878 1.125-1.356 2.512-1.356 3.939 0 3.511 2.89 6.4 6.4 6.4 1.221 0 2.416-.349 3.444-1.005l1.964 2.16a14.92 14.92 0 0 1-5.432.99zm.8-12.724a1.07 1.07 0 0 1-.867-1.048c0-.585.482-1.067 1.067-1.067a1.12 1.12 0 0 1 .2.019c2.784.54 4.896 2.863 5.169 5.686a1.07 1.07 0 0 1-.962 1.161c-.034.002-.067.002-.1 0a1.07 1.07 0 0 1-1.067-.968 4.29 4.29 0 0 0-3.44-3.783zm15.104 4.626c-.056.125-1.407 3.116-4.448 5.84a1.07 1.07 0 0 1-.724.283c-.585 0-1.067-.482-1.067-1.067a1.07 1.07 0 0 1 .368-.806A17.7 17.7 0 0 0 29.74 16a17.73 17.73 0 0 0-3.083-4.103C23.689 8.959 20.104 7.467 16 7.467a15.82 15.82 0 0 0-2.581.209 1.06 1.06 0 0 1-.186.016 1.07 1.07 0 0 1-1.067-1.066 1.07 1.07 0 0 1 .901-1.054A17.89 17.89 0 0 1 16 5.333c4.651 0 8.876 1.768 12.221 5.114 2.511 2.51 3.64 5.016 3.687 5.121.123.276.123.591 0 .867h-.004z' fill-rule='nonzero'/></g></svg>",
+    HOME: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M12.217 30.503V20.414h7.567v10.089h10.089V15.37a1.26 1.26 0 0 0-.369-.892L16.892 1.867a1.26 1.26 0 0 0-1.784 0L2.497 14.478a1.26 1.26 0 0 0-.369.892v15.133h10.089z'/></svg>",
+    LOCAL_CO_OP: "<svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round'><g><path d='M24.272 11.165h-3.294l-3.14 3.564c-.391.391-.922.611-1.476.611a2.1 2.1 0 0 1-2.087-2.088 2.09 2.09 0 0 1 .031-.362l1.22-6.274a3.89 3.89 0 0 1 3.81-3.206h6.57c1.834 0 3.439 1.573 3.833 3.295l1.205 6.185a2.09 2.09 0 0 1 .031.362 2.1 2.1 0 0 1-2.087 2.088c-.554 0-1.085-.22-1.476-.611l-3.14-3.564' fill='none' stroke='#fff' stroke-width='2'/><circle cx='22.625' cy='5.874' r='.879'/><path d='M11.022 24.415H7.728l-3.14 3.564c-.391.391-.922.611-1.476.611a2.1 2.1 0 0 1-2.087-2.088 2.09 2.09 0 0 1 .031-.362l1.22-6.274a3.89 3.89 0 0 1 3.81-3.206h6.57c1.834 0 3.439 1.573 3.833 3.295l1.205 6.185a2.09 2.09 0 0 1 .031.362 2.1 2.1 0 0 1-2.087 2.088c-.554 0-1.085-.22-1.476-.611l-3.14-3.564' fill='none' stroke='#fff' stroke-width='2'/><circle cx='9.375' cy='19.124' r='.879'/></g></svg>",
+    NATIVE_MKB: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g stroke-width='2.1'><path d='m15.817 6h-10.604c-2.215 0-4.013 1.798-4.013 4.013v12.213c0 2.215 1.798 4.013 4.013 4.013h11.21'/><path d='m5.698 20.617h1.124m-1.124-4.517h7.9m-7.881-4.5h7.9m-2.3 9h2.2'/></g><g stroke-width='2.13'><path d='m30.805 13.1c0-3.919-3.181-7.1-7.1-7.1s-7.1 3.181-7.1 7.1v6.4c0 3.919 3.182 7.1 7.1 7.1s7.1-3.181 7.1-7.1z'/><path d='m23.705 14.715v-4.753'/></g></svg>",
+    NEW: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M26.875 30.5H5.125c-.663 0-1.208-.545-1.208-1.208V2.708c0-.663.545-1.208 1.208-1.208h14.5l8.458 8.458v19.333c0 .663-.545 1.208-1.208 1.208z'/><path d='M19.625 1.5v8.458h8.458m-15.708 9.667h7.25'/><path d='M16 16v7.25'/></svg>",
+    MANAGE: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' viewBox='0 0 32 32'><path d='M10.417 30.271H2.97a1.25 1.25 0 0 1-1.241-1.241v-6.933c.001-.329.131-.644.363-.877L21.223 2.09c.481-.481 1.273-.481 1.754 0l6.933 6.928a1.25 1.25 0 0 1 0 1.755L10.417 30.271z'/><path d='M29.032 30.271H10.417m6.205-23.58l8.687 8.687'/></svg>",
+    COPY: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M1.498 6.772h23.73v23.73H1.498zm5.274-5.274h23.73v23.73'/></svg>",
+    TRASH: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M29.5 6.182h-27m9.818 7.363v9.818m7.364-9.818v9.818'/><path d='M27.045 6.182V29.5c0 .673-.554 1.227-1.227 1.227H6.182c-.673 0-1.227-.554-1.227-1.227V6.182m17.181 0V3.727a2.47 2.47 0 0 0-2.455-2.455h-7.364a2.47 2.47 0 0 0-2.455 2.455v2.455'/></svg>",
+    CURSOR_TEXT: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><path d='M16 7.3a5.83 5.83 0 0 1 5.8-5.8h2.9m0 29h-2.9a5.83 5.83 0 0 1-5.8-5.8'/><path d='M7.3 30.5h2.9a5.83 5.83 0 0 0 5.8-5.8V7.3a5.83 5.83 0 0 0-5.8-5.8H7.3'/><path d='M11.65 16h8.7'/></svg>",
+    POWER: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 2.445v12.91m7.746-11.619C27.631 6.27 30.2 10.37 30.2 15.355c0 7.79-6.41 14.2-14.2 14.2s-14.2-6.41-14.2-14.2c0-4.985 2.569-9.085 6.454-11.619'/></svg>",
+    QUESTION: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><g transform='matrix(.256867 0 0 .256867 -16.878964 -18.049342)'><circle cx='128' cy='180' r='12' fill='#fff'/><path d='M128 144v-8c17.67 0 32-12.54 32-28s-14.33-28-32-28-32 12.54-32 28v4' fill='none' stroke='#fff' stroke-width='16'/></g></svg>",
+    REFRESH: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M23.247 12.377h7.247V5.13'/><path d='M23.911 25.663a13.29 13.29 0 0 1-9.119 3.623C7.504 29.286 1.506 23.289 1.506 16S7.504 2.713 14.792 2.713a13.29 13.29 0 0 1 9.395 3.891l6.307 5.772'/></svg>",
+    REMOTE_PLAY: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='4' viewBox='0 0 32 32'><g transform='matrix(.492308 0 0 .581818 -14.7692 -11.6364)'><clipPath id='A'><path d='M30 20h65v55H30z'/></clipPath><g clip-path='url(#A)'><g transform='matrix(.395211 0 0 .334409 11.913 7.01124)'><g transform='matrix(.555556 0 0 .555556 57.8889 -20.2417)' fill='none' stroke='#fff' stroke-width='13.88'><path d='M200 140.564c-42.045-33.285-101.955-33.285-144 0M168 165c-23.783-17.3-56.217-17.3-80 0'/></g><g transform='matrix(-.555556 0 0 -.555556 200.111 262.393)'><g transform='matrix(1 0 0 1 0 11.5642)'><path d='M200 129c-17.342-13.728-37.723-21.795-58.636-24.198C111.574 101.378 80.703 109.444 56 129' fill='none' stroke='#fff' stroke-width='13.88'/></g><path d='M168 165c-23.783-17.3-56.217-17.3-80 0' fill='none' stroke='#fff' stroke-width='13.88'/></g><g transform='matrix(.75 0 0 .75 32 32)'><path d='M24 72h208v93.881H24z' fill='none' stroke='#fff' stroke-linejoin='miter' stroke-width='9.485'/><circle cx='188' cy='128' r='12' stroke-width='10' transform='matrix(.708333 0 0 .708333 71.8333 12.8333)'/><path d='M24.358 103.5h110' fill='none' stroke='#fff' stroke-linecap='butt' stroke-width='10.282'/></g></g></g></g></svg>",
+    CARET_LEFT: "<svg xmlns='http://www.w3.org/2000/svg' width='100%' stroke='#fff' fill='#fff' height='100%' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><path d='M6.755 1.924l-6 13.649c-.119.27-.119.578 0 .849l6 13.649c.234.533.857.775 1.389.541s.775-.857.541-1.389L2.871 15.997 8.685 2.773c.234-.533-.008-1.155-.541-1.389s-1.155.008-1.389.541z'/></svg>",
+    CARET_RIGHT: "<svg xmlns='http://www.w3.org/2000/svg' width='100%' stroke='#fff' fill='#fff' height='100%' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><path d='M2.685 1.924l6 13.649c.119.27.119.578 0 .849l-6 13.649c-.234.533-.857.775-1.389.541s-.775-.857-.541-1.389l5.813-13.225L.755 2.773c-.234-.533.008-1.155.541-1.389s1.155.008 1.389.541z'/></svg>",
+    SCREENSHOT: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g transform='matrix(.150985 0 0 .150985 -3.32603 -2.72209)' fill='none' stroke='#fff' stroke-width='16'><path d='M208 208H48c-8.777 0-16-7.223-16-16V80c0-8.777 7.223-16 16-16h32l16-24h64l16 24h32c8.777 0 16 7.223 16 16v112c0 8.777-7.223 16-16 16z'/><circle cx='128' cy='132' r='36'/></g></svg>",
+    SPEAKER_MUTED: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' stroke='none' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M5.462 3.4c-.205-.23-.499-.363-.808-.363-.592 0-1.079.488-1.079 1.08a1.08 1.08 0 0 0 .289.736l4.247 4.672H2.504a2.17 2.17 0 0 0-2.16 2.16v8.637a2.17 2.17 0 0 0 2.16 2.16h6.107l9.426 7.33a1.08 1.08 0 0 0 .662.227c.592 0 1.08-.487 1.08-1.079v-6.601l5.679 6.247a1.08 1.08 0 0 0 .808.363c.592 0 1.08-.487 1.08-1.079a1.08 1.08 0 0 0-.29-.736L5.462 3.4zm-2.958 8.285h5.398v8.637H2.504v-8.637zM17.62 26.752l-7.558-5.878V11.67l7.558 8.313v6.769zm5.668-8.607c1.072-1.218 1.072-3.063 0-4.281a1.08 1.08 0 0 1-.293-.74c0-.592.487-1.079 1.079-1.079a1.08 1.08 0 0 1 .834.393 5.42 5.42 0 0 1 0 7.137 1.08 1.08 0 0 1-.81.365c-.593 0-1.08-.488-1.08-1.08 0-.263.096-.517.27-.715zM12.469 7.888c-.147-.19-.228-.423-.228-.663a1.08 1.08 0 0 1 .417-.853l5.379-4.184a1.08 1.08 0 0 1 .662-.227c.593 0 1.08.488 1.08 1.08v10.105c0 .593-.487 1.08-1.08 1.08s-1.079-.487-1.079-1.08V5.255l-3.636 2.834c-.469.362-1.153.273-1.515-.196v-.005zm19.187 8.115a10.79 10.79 0 0 1-2.749 7.199 1.08 1.08 0 0 1-.793.347c-.593 0-1.08-.487-1.08-1.079 0-.26.094-.511.264-.708 2.918-3.262 2.918-8.253 0-11.516-.184-.2-.287-.461-.287-.733 0-.592.487-1.08 1.08-1.08a1.08 1.08 0 0 1 .816.373 10.78 10.78 0 0 1 2.749 7.197z' fill-rule='nonzero'/></svg>",
+    TOUCH_CONTROL_ENABLE: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><path d='M30.021 9.448a.89.89 0 0 0-.889-.889H2.909a.89.89 0 0 0-.889.889v13.146a.89.89 0 0 0 .889.888h26.223a.89.89 0 0 0 .889-.888V9.448z' fill='none' stroke='#fff' stroke-width='2.083'/><path d='M8.147 11.981l-.053-.001-.054.001c-.55.028-.988.483-.988 1.04v6c0 .575.467 1.042 1.042 1.042l.053-.001c.55-.028.988-.484.988-1.04v-6a1.04 1.04 0 0 0-.988-1.04z'/><path d='M11.147 14.981l-.054-.001h-6a1.04 1.04 0 1 0 0 2.083h6c.575 0 1.042-.467 1.042-1.042a1.04 1.04 0 0 0-.988-1.04z'/><circle cx='25.345' cy='18.582' r='2.561' fill='none' stroke='#fff' stroke-width='1.78' transform='matrix(1.17131 0 0 1.17131 -5.74235 -5.74456)'/></svg>",
+    TOUCH_CONTROL_DISABLE: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' viewBox='0 0 32 32' fill-rule='evenodd' stroke-linejoin='round' stroke-miterlimit='2'><g fill='none' stroke='#fff'><path d='M6.021 5.021l20 22' stroke-width='2'/><path d='M8.735 8.559H2.909a.89.89 0 0 0-.889.889v13.146a.89.89 0 0 0 .889.888h19.34m4.289 0h2.594a.89.89 0 0 0 .889-.888V9.448a.89.89 0 0 0-.889-.889H12.971' stroke-miterlimit='1.5' stroke-width='2.083'/></g><path d='M8.147 11.981l-.053-.001-.054.001c-.55.028-.988.483-.988 1.04v6c0 .575.467 1.042 1.042 1.042l.053-.001c.55-.028.988-.484.988-1.04v-6a1.04 1.04 0 0 0-.988-1.04z'/><path d='M11.147 14.981l-.054-.001h-6a1.04 1.04 0 1 0 0 2.083h6c.575 0 1.042-.467 1.042-1.042a1.04 1.04 0 0 0-.988-1.04z'/><circle cx='25.345' cy='18.582' r='2.561' fill='none' stroke='#fff' stroke-width='1.78' transform='matrix(1.17131 0 0 1.17131 -5.74235 -5.74456)'/></svg>",
+    MICROPHONE: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M21.368 6.875A5.37 5.37 0 0 0 16 1.507a5.37 5.37 0 0 0-5.368 5.368v8.588A5.37 5.37 0 0 0 16 20.831a5.37 5.37 0 0 0 5.368-5.368V6.875zM16 25.125v5.368m9.662-15.03c0 5.3-4.362 9.662-9.662 9.662s-9.662-4.362-9.662-9.662'/></svg>",
+    MICROPHONE_MUTED: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 25.125v5.368M5.265 4.728l21.471 23.618m-4.789-5.267c-1.698 1.326-3.793 2.047-5.947 2.047-5.3 0-9.662-4.362-9.662-9.662'/><path d='M25.662 15.463a9.62 9.62 0 0 1-.978 4.242m-5.64.187c-.895.616-1.957.943-3.043.939-2.945 0-5.368-2.423-5.368-5.368v-4.831m.442-5.896A5.38 5.38 0 0 1 16 1.507c2.945 0 5.368 2.423 5.368 5.368v8.588c0 .188-.01.375-.03.562'/></svg>",
+    BATTERY: "<svg xmlns='http://www.w3.org/2000/svg' fill='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' stroke-miterlimit='2' viewBox='0 0 32 32'><path d='M24.774 6.71H3.097C1.398 6.71 0 8.108 0 9.806v12.387c0 1.699 1.398 3.097 3.097 3.097h21.677c1.699 0 3.097-1.398 3.097-3.097V9.806c0-1.699-1.398-3.097-3.097-3.097zm1.032 15.484a1.04 1.04 0 0 1-1.032 1.032H3.097a1.04 1.04 0 0 1-1.032-1.032V9.806a1.04 1.04 0 0 1 1.032-1.032h21.677a1.04 1.04 0 0 1 1.032 1.032v12.387zm-2.065-10.323v8.258a1.04 1.04 0 0 1-1.032 1.032H5.161a1.04 1.04 0 0 1-1.032-1.032v-8.258a1.04 1.04 0 0 1 1.032-1.032H22.71a1.04 1.04 0 0 1 1.032 1.032zm8.258 0v8.258a1.04 1.04 0 0 1-1.032 1.032 1.04 1.04 0 0 1-1.032-1.032v-8.258a1.04 1.04 0 0 1 1.032-1.032A1.04 1.04 0 0 1 32 11.871z' fill-rule='nonzero'/></svg>",
+    PLAYTIME: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><g transform='matrix(.150026 0 0 .150026 -3.20332 -3.20332)' fill='none' stroke='#fff' stroke-width='16'><circle cx='128' cy='128' r='96'/><path d='M128 72v56h56'/></g></svg>",
+    SERVER: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M9.773 16c0-5.694 4.685-10.379 10.379-10.379S30.53 10.306 30.53 16s-4.685 10.379-10.379 10.379H8.735c-3.982-.005-7.256-3.283-7.256-7.265s3.28-7.265 7.265-7.265c.606 0 1.21.076 1.797.226' fill='none' stroke='#fff' stroke-width='2.076'/></svg>",
+    DOWNLOAD: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 19.955V1.5m14.5 18.455v9.227c0 .723-.595 1.318-1.318 1.318H2.818c-.723 0-1.318-.595-1.318-1.318v-9.227'/><path d='M22.591 13.364L16 19.955l-6.591-6.591'/></svg>",
+    UPLOAD: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M16 19.905V1.682m14.318 18.223v9.112a1.31 1.31 0 0 1-1.302 1.302H2.983a1.31 1.31 0 0 1-1.302-1.302v-9.112'/><path d='M9.492 8.19L16 1.682l6.508 6.508'/></svg>",
+    AUDIO: "<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='#fff' fill-rule='evenodd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 32 32'><path d='M8.964 21.417h-6.5a1.09 1.09 0 0 1-1.083-1.083v-8.667a1.09 1.09 0 0 1 1.083-1.083h6.5L18.714 3v26l-9.75-7.583z'/><path d='M8.964 10.583v10.833m15.167-8.28a4.35 4.35 0 0 1 0 5.728M28.149 9.5a9.79 9.79 0 0 1 0 13'/></svg>"
+};
 class GameSettingsStorage extends BaseSettingsStorage {
     constructor(id) {
         super(`${"BetterXcloud.Stream"}.${id}`, StreamSettingsStorage.DEFINITIONS);
@@ -2313,6 +2318,18 @@ class StreamSettingsStorage extends BaseSettingsStorage {
                 highest: "cas"
             }
         },
+        "video.processing.mode": {
+            label: t("clarity-boost-mode"),
+            default: "performance",
+            options: {
+                performance: t("performance"),
+                quality: t("quality")
+            },
+            suggest: {
+                lowest: "performance",
+                highest: "quality"
+            }
+        },
         "video.player.powerPreference": {
             label: t("renderer-configuration"),
             default: "default",
@@ -2360,10 +2377,13 @@ class StreamSettingsStorage extends BaseSettingsStorage {
             default: "16:9",
             options: {
                 "16:9": `16:9 (${t("default")})`,
-                "18:9": "18:9",
-                "21:9": "21:9",
                 "16:10": "16:10",
+                "18:9": "18:9",
+                "20:9": "20:9",
+                "21:9": "21:9",
+                "3:2": "3:2",
                 "4:3": "4:3",
+                "5:4": "5:4",
                 fill: t("stretch")
             }
         },
@@ -2624,14 +2644,15 @@ function setPref(prefKey, value, origin) {
 
 function checkForUpdate() {
     if (SCRIPT_VERSION.includes("beta")) return;
+    fetch("https://api.github.com/repos/redphx/better-xcloud/releases/latest").then((response) => response.json()).then((json) => {
+        setGlobalPref("version.latest", json.tag_name.substring(1), "direct"), setGlobalPref("version.current", SCRIPT_VERSION, "direct");
+    });
     let CHECK_INTERVAL_SECONDS = 7200,
         currentVersion = getGlobalPref("version.current"),
         lastCheck = getGlobalPref("version.lastCheck"),
         now = Math.round(+new Date / 1000);
     if (currentVersion === SCRIPT_VERSION && now - lastCheck < CHECK_INTERVAL_SECONDS) return;
-    setGlobalPref("version.lastCheck", now, "direct"), fetch("https://api.github.com/repos/redphx/better-xcloud/releases/latest").then((response) => response.json()).then((json) => {
-        setGlobalPref("version.latest", json.tag_name.substring(1), "direct"), setGlobalPref("version.current", SCRIPT_VERSION, "direct");
-    }), Translations.updateTranslations(currentVersion === SCRIPT_VERSION);
+    setGlobalPref("version.lastCheck", now, "direct"), Translations.updateTranslations(currentVersion === SCRIPT_VERSION);
 }
 
 function disablePwa() {
@@ -2693,7 +2714,7 @@ function parseDetailsPath(path) {
 }
 
 function clearAllData() {
-    for (let i = 0; i < localStorage.length; i++) {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
         let key = localStorage.key(i);
         if (!key) continue;
         if (key.startsWith("BetterXcloud") || key.startsWith("better_xcloud")) localStorage.removeItem(key);
@@ -3313,7 +3334,10 @@ class MkbPopup {
             label: t("manage"),
             icon: BxIcon.MANAGE,
             style: 64,
-
+            onClick: () => {
+                let dialog = SettingsDialog.getInstance();
+                dialog.focusTab("mkb"), dialog.show();
+            }
         }))), document.documentElement.appendChild(this.$popup);
     }
     reset() {
@@ -4509,6 +4533,10 @@ class SettingsManager {
             }
         },
         "video.processing": {
+            onChange: updateVideoPlayer,
+            onChangeUi: onChangeVideoPlayerType
+        },
+        "video.processing.mode": {
             onChange: updateVideoPlayer
         },
         "video.processing.sharpness": {
@@ -4682,10 +4710,12 @@ class SettingsManager {
 
 function onChangeVideoPlayerType() {
     let playerType = getStreamPref("video.player.type"),
+        processing = getStreamPref("video.processing"),
         settingsManager = SettingsManager.getInstance();
     if (!settingsManager.hasElement("video.processing")) return;
     let isDisabled = !1,
         $videoProcessing = settingsManager.getElement("video.processing"),
+        $videoProcessingMode = settingsManager.getElement("video.processing.mode"),
         $videoSharpness = settingsManager.getElement("video.processing.sharpness"),
         $videoPowerPreference = settingsManager.getElement("video.player.powerPreference"),
         $videoMaxFps = settingsManager.getElement("video.maxFps"),
@@ -4693,7 +4723,7 @@ function onChangeVideoPlayerType() {
     if (playerType === "default") {
         if ($videoProcessing.value = "usm", setStreamPref("video.processing", "usm", "direct"), $optCas && ($optCas.disabled = !0), UserAgent.isSafari()) isDisabled = !0;
     } else $optCas && ($optCas.disabled = !1);
-    $videoProcessing.disabled = isDisabled, $videoSharpness.dataset.disabled = isDisabled.toString(), $videoPowerPreference.closest(".bx-settings-row").classList.toggle("bx-gone", playerType !== "webgl2"), $videoMaxFps.closest(".bx-settings-row").classList.toggle("bx-gone", playerType === "default");
+    $videoProcessing.disabled = isDisabled, $videoSharpness.dataset.disabled = isDisabled.toString(), $videoProcessingMode.closest(".bx-settings-row").classList.toggle("bx-gone", !(playerType === "webgl2" && processing === "cas")), $videoPowerPreference.closest(".bx-settings-row").classList.toggle("bx-gone", playerType !== "webgl2"), $videoMaxFps.closest(".bx-settings-row").classList.toggle("bx-gone", playerType === "default");
 }
 
 function limitVideoPlayerFps(targetFps) {
@@ -4705,6 +4735,7 @@ function updateVideoPlayer() {
     if (!streamPlayerManager) return;
     let options = {
         processing: getStreamPref("video.processing"),
+        processingMode: getStreamPref("video.processing.mode"),
         sharpness: getStreamPref("video.processing.sharpness"),
         saturation: getStreamPref("video.saturation"),
         contrast: getStreamPref("video.contrast"),
@@ -5117,7 +5148,7 @@ class TouchController {
         }
         if (!layoutId) layoutId = TouchController.#customLayouts[xboxTitleId]?.default_layout || null;
         if (!layoutId) {
-            BxLogger.error(LOG_TAG, "Invalid layoutId, show default controller"), TouchController.#enabled && TouchController.#showDefault();
+            BxLogger.warning(LOG_TAG, "Invalid layoutId, show default controller"), TouchController.#enabled && TouchController.#showDefault();
             return;
         }
         let layoutChanged = TouchController.#currentLayoutId !== layoutId;
@@ -5156,6 +5187,9 @@ class TouchController {
     }
     static getCustomList() {
         return TouchController.#customList;
+    }
+    static hasCustomControl(productId) {
+        return TouchController.#customList?.includes(productId);
     }
     static setup() {
         window.testTouchLayout = (layout) => {
@@ -5217,11 +5251,11 @@ class TouchController {
 var controller_customization_default = "var shareButtonPressed=currentGamepad.buttons[17]?.pressed,shareButtonHandled=!1,xCloudGamepad=$xCloudGamepadVar$;if(currentGamepad.id in window.BX_STREAM_SETTINGS.controllers){let controller=window.BX_STREAM_SETTINGS.controllers[currentGamepad.id];if(controller?.customization){let{mapping,ranges}=controller.customization,pressedButtons={},releasedButtons={},isModified=!1;if(ranges.LeftTrigger){let[from,to]=ranges.LeftTrigger;xCloudGamepad.LeftTrigger=xCloudGamepad.LeftTrigger>to?1:xCloudGamepad.LeftTrigger,xCloudGamepad.LeftTrigger=xCloudGamepad.LeftTrigger<from?0:xCloudGamepad.LeftTrigger}if(ranges.RightTrigger){let[from,to]=ranges.RightTrigger;xCloudGamepad.RightTrigger=xCloudGamepad.RightTrigger>to?1:xCloudGamepad.RightTrigger,xCloudGamepad.RightTrigger=xCloudGamepad.RightTrigger<from?0:xCloudGamepad.RightTrigger}if(ranges.LeftThumb){let[from,to]=ranges.LeftThumb,xAxis=xCloudGamepad.LeftThumbXAxis,yAxis=xCloudGamepad.LeftThumbYAxis,range=Math.abs(Math.sqrt(xAxis*xAxis+yAxis*yAxis)),newRange=range>to?1:range;if(newRange=newRange<from?0:newRange,newRange!==range)xCloudGamepad.LeftThumbXAxis=xAxis*(newRange/range),xCloudGamepad.LeftThumbYAxis=yAxis*(newRange/range)}if(ranges.RightThumb){let[from,to]=ranges.RightThumb,xAxis=xCloudGamepad.RightThumbXAxis,yAxis=xCloudGamepad.RightThumbYAxis,range=Math.abs(Math.sqrt(xAxis*xAxis+yAxis*yAxis)),newRange=range>to?1:range;if(newRange=newRange<from?0:newRange,newRange!==range)xCloudGamepad.RightThumbXAxis=xAxis*(newRange/range),xCloudGamepad.RightThumbYAxis=yAxis*(newRange/range)}if(shareButtonPressed&&\"Share\"in mapping){let targetButton=mapping.Share;if(typeof targetButton===\"string\")pressedButtons[targetButton]=1;shareButtonHandled=!0,delete mapping.Share}let key;for(key in mapping){let mappedKey=mapping[key];if(key===\"LeftStickAxes\"||key===\"RightStickAxes\"){let sourceX,sourceY,targetX,targetY;if(key===\"LeftStickAxes\")sourceX=\"LeftThumbXAxis\",sourceY=\"LeftThumbYAxis\",targetX=\"RightThumbXAxis\",targetY=\"RightThumbYAxis\";else sourceX=\"RightThumbXAxis\",sourceY=\"RightThumbYAxis\",targetX=\"LeftThumbXAxis\",targetY=\"LeftThumbYAxis\";if(typeof mappedKey===\"string\"){let rangeX=xCloudGamepad[sourceX],rangeY=xCloudGamepad[sourceY];if(Math.abs(Math.sqrt(rangeX*rangeX+rangeY*rangeY))>=0.1)pressedButtons[targetX]=rangeX,pressedButtons[targetY]=rangeY}releasedButtons[sourceX]=0,releasedButtons[sourceY]=0,isModified=!0}else if(typeof mappedKey===\"string\"){let pressed=!1,value=0;if(key===\"LeftTrigger\"||key===\"RightTrigger\"){let currentRange=xCloudGamepad[key];if(mappedKey===\"LeftTrigger\"||mappedKey===\"RightTrigger\")pressed=currentRange>=0.1,value=currentRange;else pressed=!0,value=currentRange>=0.9?1:0}else if(xCloudGamepad[key])pressed=!0,value=xCloudGamepad[key];if(pressed)pressedButtons[mappedKey]=value,releasedButtons[key]=0,isModified=!0}else if(mappedKey===!1)pressedButtons[key]=0,isModified=!0}isModified&&Object.assign(xCloudGamepad,releasedButtons,pressedButtons)}}if(shareButtonPressed&&!shareButtonHandled)window.dispatchEvent(new Event(BxEvent.CAPTURE_SCREENSHOT));\n";
 var poll_gamepad_default = "var self=this;if(window.BX_EXPOSED.disableGamepadPolling){self.inputConfiguration.useIntervalWorkerThreadForInput&&self.intervalWorker?self.intervalWorker.scheduleTimer(50):self.pollGamepadssetTimeoutTimerID=window.setTimeout(self.pollGamepads,50);return}var currentGamepad=$gamepadVar$,btnHome=currentGamepad.buttons[16];if(btnHome){if(!self.bxHomeStates)self.bxHomeStates={};let intervalMs=0,hijack=!1;if(btnHome.pressed)if(hijack=!0,intervalMs=16,self.gamepadIsIdle.set(currentGamepad.index,!1),self.bxHomeStates[currentGamepad.index]){let lastTimestamp=self.bxHomeStates[currentGamepad.index].timestamp;if(currentGamepad.timestamp!==lastTimestamp){if(self.bxHomeStates[currentGamepad.index].timestamp=currentGamepad.timestamp,window.BX_EXPOSED.handleControllerShortcut(currentGamepad))self.bxHomeStates[currentGamepad.index].shortcutPressed+=1}}else window.BX_EXPOSED.resetControllerShortcut(currentGamepad.index),self.bxHomeStates[currentGamepad.index]={shortcutPressed:0,timestamp:currentGamepad.timestamp};else if(self.bxHomeStates[currentGamepad.index]){hijack=!0;let info=structuredClone(self.bxHomeStates[currentGamepad.index]);if(self.bxHomeStates[currentGamepad.index]=null,info.shortcutPressed===0){let fakeGamepadMappings=[{GamepadIndex:currentGamepad.index,A:0,B:0,X:0,Y:0,LeftShoulder:0,RightShoulder:0,LeftTrigger:0,RightTrigger:0,View:0,Menu:0,LeftThumb:0,RightThumb:0,DPadUp:0,DPadDown:0,DPadLeft:0,DPadRight:0,Nexus:1,LeftThumbXAxis:0,LeftThumbYAxis:0,RightThumbXAxis:0,RightThumbYAxis:0,PhysicalPhysicality:0,VirtualPhysicality:0,Dirty:!0,Virtual:!1}];intervalMs=currentGamepad.timestamp-info.timestamp>=500?500:100,self.inputSink.onGamepadInput(performance.now()-intervalMs,fakeGamepadMappings)}else intervalMs=window.BX_STREAM_SETTINGS.controllerPollingRate}if(hijack&&intervalMs){self.inputConfiguration.useIntervalWorkerThreadForInput&&self.intervalWorker?self.intervalWorker.scheduleTimer(intervalMs):self.pollGamepadssetTimeoutTimerID=setTimeout(self.pollGamepads,intervalMs);return}}\n";
 var expose_stream_session_default = 'var self=this;window.BX_EXPOSED.streamSession=self;var orgSetMicrophoneState=self.setMicrophoneState.bind(self);self.setMicrophoneState=(state)=>{orgSetMicrophoneState(state),window.BxEventBus.Stream.emit("microphone.state.changed",{state})};window.dispatchEvent(new Event(BxEvent.STREAM_SESSION_READY));var updateDimensionsStr=self.updateDimensions.toString();if(updateDimensionsStr.startsWith("function "))updateDimensionsStr=updateDimensionsStr.substring(9);var renderTargetVar=updateDimensionsStr.match(/if\\((\\w+)\\){/)[1];updateDimensionsStr=updateDimensionsStr.replaceAll(renderTargetVar+".scroll","scroll");updateDimensionsStr=updateDimensionsStr.replace(`if(${renderTargetVar}){`,`\nif (${renderTargetVar}) {\nconst scrollWidth = ${renderTargetVar}.dataset.width ? parseInt(${renderTargetVar}.dataset.width) : ${renderTargetVar}.scrollWidth;\nconst scrollHeight = ${renderTargetVar}.dataset.height ? parseInt(${renderTargetVar}.dataset.height) : ${renderTargetVar}.scrollHeight;\n`);eval(`this.updateDimensions = function ${updateDimensionsStr}`);\n';
-var game_card_icons_default = `var supportedInputIcons=$supportedInputIcons$,{productId}=$param$;supportedInputIcons.shift();if(window.BX_EXPOSED.localCoOpManager.isSupported(productId))supportedInputIcons.push(window.BX_EXPOSED.createReactLocalCoOpIcon);`;
+var game_card_icons_default = `var supportedInputIcons=$supportedInputIcons$,productId=$productId$;supportedInputIcons.shift();if(window.BX_EXPOSED.localCoOpManager.isSupported(productId))supportedInputIcons.push(window.BX_EXPOSED.createReactLocalCoOpIcon);`;
 var local_co_op_enable_default = 'this.orgOnGamepadChanged=this.onGamepadChanged;this.orgOnGamepadInput=this.onGamepadInput;var match,onGamepadChangedStr=this.onGamepadChanged.toString();if(onGamepadChangedStr.startsWith("function "))onGamepadChangedStr=onGamepadChangedStr.substring(9);onGamepadChangedStr=onGamepadChangedStr.replaceAll("0","arguments[1]");eval(`this.patchedOnGamepadChanged = function ${onGamepadChangedStr}`);var onGamepadInputStr=this.onGamepadInput.toString();if(onGamepadInputStr.startsWith("function "))onGamepadInputStr=onGamepadInputStr.substring(9);match=onGamepadInputStr.match(/(\\w+\\.GamepadIndex)/);if(match){let gamepadIndexVar=match[0];onGamepadInputStr=onGamepadInputStr.replace("this.gamepadStates.get(",`this.gamepadStates.get(${gamepadIndexVar},`),eval(`this.patchedOnGamepadInput = function ${onGamepadInputStr}`),BxLogger.info("supportLocalCoOp","✅ Successfully patched local co-op support")}else BxLogger.error("supportLocalCoOp","❌ Unable to patch local co-op support");this.toggleLocalCoOp=(enable)=>{BxLogger.info("toggleLocalCoOp",enable?"Enabled":"Disabled"),this.onGamepadChanged=enable?this.patchedOnGamepadChanged:this.orgOnGamepadChanged,this.onGamepadInput=enable?this.patchedOnGamepadInput:this.orgOnGamepadInput;let gamepads=window.navigator.getGamepads();for(let gamepad of gamepads){if(!gamepad?.connected)continue;if(gamepad.id.includes("Better xCloud"))continue;gamepad._noToast=!0,window.dispatchEvent(new GamepadEvent("gamepaddisconnected",{gamepad})),window.dispatchEvent(new GamepadEvent("gamepadconnected",{gamepad}))}};window.BX_EXPOSED.toggleLocalCoOp=this.toggleLocalCoOp.bind(null);\n';
-var remote_play_keep_alive_default = `try{if(JSON.parse(e).reason==="WarningForBeingIdle"&&!window.location.pathname.includes("/launch/")){this.sendKeepAlive();return}}catch(ex){console.log(ex)}`;
+var remote_play_keep_alive_default = `try{if(JSON.parse(e).reason==="WarningForBeingIdle"&&window.location.pathname.includes("/play/consoles/launch/")){this.sendKeepAlive();return}}catch(ex){console.log(ex)}`;
 var vibration_adjust_default = `if(e?.gamepad?.connected){let gamepadSettings=window.BX_STREAM_SETTINGS.controllers[e.gamepad.id];if(gamepadSettings?.customization){let intensity=gamepadSettings.customization.vibrationIntensity;if(intensity<=0){e.repeat=0;return}else if(intensity<1)e.leftMotorPercent*=intensity,e.rightMotorPercent*=intensity,e.leftTriggerMotorPercent*=intensity,e.rightTriggerMotorPercent*=intensity}}`;
-var stream_hud_default = `var options=arguments[0];window.BX_EXPOSED.showStreamMenu=options.onShowStreamMenu;options.guideUI=null;window.BX_EXPOSED.reactUseEffect(()=>{window.BxEventBus.Stream.emit("ui.streamHud.rendered",{expanded:options.offset.x===0})});`;
+var stream_hud_default = `window.BX_EXPOSED.showStreamMenu=$onShowStreamMenu$;$guideUI$=null;window.BX_EXPOSED.reactUseEffect(()=>{window.BxEventBus.Stream.emit("ui.streamHud.rendered",{expanded:$offset$.x===0})});`;
 var create_portal_default = `var $dom=arguments[1];if($dom&&$dom instanceof HTMLElement&&$dom.id==="gamepass-dialog-root"){let showing=!1,$dialog=$dom.firstElementChild?.firstElementChild;if($dialog)showing=!$dialog.className.includes("pageChangeExit");window.BxEventBus.Script.emit(showing?"dialog.shown":"dialog.dismissed",{})}`;
 class PatcherUtils {
     static indexOf(txt, searchString, startIndex, maxRange = 0, after = !1) {
@@ -5242,13 +5276,18 @@ class PatcherUtils {
     static replaceWith(txt, index, fromString, toString) {
         return txt.substring(0, index) + toString + txt.substring(index + fromString.length);
     }
+    static replaceAfterIndex(txt, search, replaceWith, index) {
+        let before = txt.slice(0, index),
+            after = txt.slice(index).replace(search, replaceWith);
+        return before + after;
+    }
     static filterPatches(patches) {
         return patches.filter((item2) => !!item2);
     }
     static patchBeforePageLoad(str, page) {
-        let text = `chunkName:()=>"${page}-page",`;
-        if (!str.includes(text)) return !1;
-        return str = str.replace("requireAsync(e){", `requireAsync(e){window.BX_EXPOSED.beforePageLoad("${page}");`), str = str.replace("requireSync(e){", `requireSync(e){window.BX_EXPOSED.beforePageLoad("${page}");`), str;
+        let index = str.indexOf(`chunkName:()=>"${page}-page",`);
+        if (index < 0) return !1;
+        return str = PatcherUtils.replaceAfterIndex(str, "requireAsync(e){", `requireAsync(e){window.BX_EXPOSED.beforePageLoad("${page}");`, index), str = PatcherUtils.replaceAfterIndex(str, "requireSync(e){", `requireSync(e){window.BX_EXPOSED.beforePageLoad("${page}");`, index), str;
     }
     static isVarCharacter(char) {
         let code = char.charCodeAt(0),
@@ -5271,9 +5310,34 @@ class PatcherUtils {
         while (PatcherUtils.isVarCharacter(str[end])) end += 1;
         return str.substring(start, end);
     }
-    static injectUseEffect(str, index, group, eventName) {
-        let newCode = `window.BX_EXPOSED.reactUseEffect(() => window.BxEventBus.${group}.emit('${eventName}', {}), []);`;
+    static injectUseEffect(str, index, group, eventName, separator = ";") {
+        let newCode = `window.BX_EXPOSED.reactUseEffect(() => window.BxEventBus.${group}.emit('${eventName}', {}), [])${separator}`;
         return str = PatcherUtils.insertAt(str, index, newCode), str;
+    }
+    static findAndParseParams(str, index, maxRange) {
+        let substr = str.substring(index, index + maxRange),
+            startIndex = substr.indexOf("({");
+        if (startIndex < 0) return !1;
+        startIndex += 1;
+        let endIndex = substr.indexOf("})", startIndex);
+        if (endIndex < 0) return !1;
+        endIndex += 1;
+        try {
+            let input = substr.substring(startIndex, endIndex);
+            return PatcherUtils.parseObjectVariables(input);
+        } catch {
+            return null;
+        }
+    }
+    static parseObjectVariables(input) {
+        try {
+            let pairs = [...input.matchAll(/(\w+)\s*:\s*([a-zA-Z_$][\w$]*)/g)],
+                result = {};
+            for (let [_, key, value] of pairs) result[key] = value;
+            return result;
+        } catch {
+            return null;
+        }
     }
 }
 var LOG_TAG2 = "Patcher",
@@ -5283,11 +5347,6 @@ var LOG_TAG2 = "Patcher",
                 index = str.indexOf(text);
             if (index < 0 || PatcherUtils.indexOf(str, '"AppInsightsCore', index, 200) < 0) return !1;
             return PatcherUtils.replaceWith(str, index, text, ".track=function(e){},!!function(");
-        },
-        disableTelemetry(str) {
-            let text = ".disableTelemetry=function(){return!1}";
-            if (!str.includes(text)) return !1;
-            return str.replace(text, ".disableTelemetry=function(){return!0}");
         },
         disableTelemetryProvider(str) {
             let text = "this.enableLightweightTelemetry=!";
@@ -5307,40 +5366,21 @@ var LOG_TAG2 = "Patcher",
             let layout = getGlobalPref("ui.layout") === "tv" ? "tv" : "default";
             return str.replace(text, `?"${layout}":"${layout}"`);
         },
-        remotePlayDirectConnectUrl(str) {
-            let index = str.indexOf("/direct-connect");
-            if (index < 0) return !1;
-            return str.replace(str.substring(index - 9, index + 15), "https://www.xbox.com/play");
+        remotePlayPostStreamRedirectUrl(str) {
+            let text = ".RemotePlayRoot.getLink()):";
+            if (!str.includes(text)) return !1;
+            return str = str.replace(text, ".Home.getLink()):"), str;
         },
         remotePlayKeepAlive(str) {
             let text = "onServerDisconnectMessage(e){";
             if (!str.includes(text)) return !1;
             return str = str.replace(text, text + remote_play_keep_alive_default), str;
         },
-        remotePlayConnectMode(str) {
-            let text = 'connectMode:"cloud-connect",';
-            if (!str.includes(text)) return !1;
-            let newCode = `connectMode: window.BX_REMOTE_PLAY_CONFIG ? "xhome-connect" : "cloud-connect",
-remotePlayServerId: (window.BX_REMOTE_PLAY_CONFIG && window.BX_REMOTE_PLAY_CONFIG.serverId) || '',`;
-            return str.replace(text, newCode);
-        },
         remotePlayDisableAchievementToast(str) {
             let text = ".AchievementUnlock:{";
             if (!str.includes(text)) return !1;
-            let newCode = "if (!!window.BX_REMOTE_PLAY_CONFIG) return;";
+            let newCode = "if (window.location.pathname.includes('/play/consoles/launch/')) return;";
             return str.replace(text, text + newCode);
-        },
-        remotePlayRecentlyUsedTitleIds(str) {
-            let text = "(e.data.recentlyUsedTitleIds)){";
-            if (!str.includes(text)) return !1;
-            let newCode = "if (window.BX_REMOTE_PLAY_CONFIG) return;";
-            return str.replace(text, text + newCode);
-        },
-        remotePlayWebTitle(str) {
-            let text = "titleTemplate:void 0,title:",
-                index = str.indexOf(text);
-            if (index < 0) return !1;
-            return str = PatcherUtils.insertAt(str, index + text.length, `!!window.BX_REMOTE_PLAY_CONFIG ? "${t("remote-play")} - Better xCloud" :`), str;
         },
         blockWebRtcStatsCollector(str) {
             let text = "this.shouldCollectStats=!0";
@@ -5348,7 +5388,7 @@ remotePlayServerId: (window.BX_REMOTE_PLAY_CONFIG && window.BX_REMOTE_PLAY_CONFI
             return str.replace(text, "this.shouldCollectStats=!1");
         },
         patchPollGamepads(str) {
-            let index = str.indexOf("},this.pollGamepads=()=>{");
+            let index = str.indexOf('()(this,"pollGamepads",');
             if (index < 0) return !1;
             let setTimeoutIndex = str.indexOf("setTimeout(this.pollGamepads", index);
             if (setTimeoutIndex < 0) return !1;
@@ -5372,14 +5412,14 @@ remotePlayServerId: (window.BX_REMOTE_PLAY_CONFIG && window.BX_REMOTE_PLAY_CONFI
             }), codeBlock = PatcherUtils.insertAt(codeBlock, backetIndex, customizationCode), str = str.substring(0, index) + codeBlock + str.substring(setTimeoutIndex), str;
         },
         enableXcloudLogger(str) {
-            let text = "this.telemetryProvider=e}log(e,t,r){";
-            if (!str.includes(text)) return !1;
+            let index = str.indexOf("this.telemetryProvider.trackErrorLike");
+            if (index > -1 && (index = PatcherUtils.lastIndexOf(str, "}log(", index, 1500)), index > -1 && (index = PatcherUtils.indexOf(str, "{", index, 30, !0)), index < 0) return !1;
             let newCode = `
 const [logTag, logLevel, logMessage] = Array.from(arguments);
 const logFunc = [console.debug, console.log, console.warn, console.error][logLevel];
 logFunc(logTag, '//', logMessage);
 `;
-            return str = str.replaceAll(text, text + newCode), str;
+            return str = PatcherUtils.insertAt(str, index, newCode), str;
         },
         enableConsoleLogging(str) {
             let text = "static isConsoleLoggingAllowed(){";
@@ -5394,8 +5434,9 @@ logFunc(logTag, '//', logMessage);
         disableGamepadDisconnectedScreen(str) {
             let index = str.indexOf('"GamepadDisconnected_Title",');
             if (index < 0) return !1;
-            let constIndex = str.indexOf("const", index - 30);
-            return str = str.substring(0, constIndex) + "e.onClose();return null;" + str.substring(constIndex), str;
+            let constIndex = PatcherUtils.lastIndexOf(str, "const[", index, 100);
+            if (constIndex < 0) return !1;
+            return str = PatcherUtils.insertAt(str, constIndex, "e();return null;"), str;
         },
         patchUpdateInputConfigurationAsync(str) {
             let text = "async updateInputConfigurationAsync(e){";
@@ -5464,11 +5505,25 @@ if (titleInfo && !titleInfo.details.hasTouchSupport && !titleInfo.details.hasFak
             return str = str.replace(text, "this.useCombinedAudioVideoStream=true"), str;
         },
         patchStreamHud(str) {
-            let index = str.indexOf("let{onCollapse");
+            let index = str.indexOf("({onCollapse:");
             if (index < 0) return !1;
-            let newCode = stream_hud_default;
-            if (getGlobalPref("touchController.mode") === "off") newCode += "options.canShowTakHUD = false;";
-            return str = PatcherUtils.insertAt(str, index, newCode), str;
+            try {
+                if (!PatcherUtils.findAndParseParams(str, index, 1000)) return !1;
+                let canShowTakHUDVar = PatcherUtils.getVariableNameAfter(str, PatcherUtils.indexOf(str, "canShowTakHUD", index, 500, !0) + 1),
+                    guideUIVar = PatcherUtils.getVariableNameAfter(str, PatcherUtils.indexOf(str, "guideUI", index, 500, !0) + 1),
+                    onShowStreamMenuVar = PatcherUtils.getVariableNameAfter(str, PatcherUtils.indexOf(str, "onShowStreamMenu", index, 500, !0) + 1),
+                    offsetVar = PatcherUtils.getVariableNameAfter(str, PatcherUtils.indexOf(str, "offset", index, 500, !0) + 1),
+                    newCode = renderString(stream_hud_default, {
+                        guideUI: guideUIVar,
+                        onShowStreamMenu: onShowStreamMenuVar,
+                        offset: offsetVar
+                    });
+                if (getGlobalPref("touchController.mode") === "off") newCode += `${canShowTakHUDVar} = false;`;
+                let bracketIndex = PatcherUtils.indexOf(str, "}){", index, 500, !0);
+                return str = PatcherUtils.insertAt(str, bracketIndex, newCode), str;
+            } catch (e) {
+                return !1;
+            }
         },
         broadcastPollingMode(str) {
             let text = ".setPollingMode=e=>{";
@@ -5545,9 +5600,9 @@ true` + text;
             return str = str.replace(text, newCode), str;
         },
         skipFeedbackDialog(str) {
-            let text = "shouldTransitionToFeedback(e){";
-            if (!str.includes(text)) return !1;
-            return str = str.replace(text, text + "return !1;"), str;
+            let index = str.indexOf("}shouldTransitionToFeedback(");
+            if (index >= 0 && (index = PatcherUtils.indexOf(str, "}){", index, 200, !0)), index < 0) return !1;
+            return str = PatcherUtils.insertAt(str, index, "return !1;"), str;
         },
         enableNativeMkb(str) {
             let index = str.indexOf(".mouseSupported&&");
@@ -5563,10 +5618,9 @@ true` + text;
             return str = str.replace(text, text + "return true;"), str;
         },
         exposeInputChannel(str) {
-            let index = str.indexOf("this.flushData=");
-            if (index < 0) return !1;
-            let newCode = "window.BX_EXPOSED.inputChannel = this,";
-            return str = PatcherUtils.insertAt(str, index, newCode), str;
+            let text = '()(this,"flushData",(';
+            if (!str.includes(text)) return !1;
+            return str = str.replace(text, '()(window.BX_EXPOSED.inputChannel = this, "flushData", ('), str;
         },
         disableNativeRequestPointerLock(str) {
             let text = "async requestPointerLock(){";
@@ -5589,19 +5643,19 @@ true` + text;
             let match = /render:.*?jsx\)\(([^,]+),/.exec(str.substring(index, index + 100));
             if (!match) return !1;
             let funcName = match[1];
-            if (index = str.indexOf(`const ${funcName}=e=>{`), index > -1 && (index = str.indexOf("return ", index)), index > -1 && (index = str.indexOf("?", index)), index < 0) return !1;
+            if (index = str.indexOf(`const ${funcName}=({children`), index > -1 && (index = PatcherUtils.indexOf(str, "return ", 300)), index > -1 && (index = PatcherUtils.indexOf(str, "?", 100)), index < 0) return !1;
             return str = str.substring(0, index) + "|| true" + str.substring(index), str;
         },
         ignoreNewsSection(str) {
-            let index = str.indexOf('Logger("CarouselRow")');
+            let index = str.indexOf('("CarouselRow"))');
             if (index > -1 && (index = PatcherUtils.lastIndexOf(str, "const ", index, 200)), index < 0) return !1;
             return str = PatcherUtils.insertAt(str, index, "return null;"), str;
         },
         ignorePlayWithFriendsSection(str) {
             let index = str.indexOf('location:"PlayWithFriendsRow",');
             if (index < 0) return !1;
-            if (index = PatcherUtils.lastIndexOf(str, "return", index, 50), index < 0) return !1;
-            return str = PatcherUtils.replaceWith(str, index, "return", "return null;"), str;
+            if (index = PatcherUtils.lastIndexOf(str, "=>", index, 50), index < 0) return !1;
+            return str = PatcherUtils.replaceWith(str, index, "=>", "=> true ? null :"), str;
         },
         ignoreAllGamesSection(str) {
             let index = str.indexOf('className:"AllGamesRow-module__allGamesRowContainer');
@@ -5621,8 +5675,9 @@ true` + text;
         },
         ignoreSiglSections(str) {
             let index = str.indexOf("SiglRow-module__heroCard___");
-            if (index < 0) return !1;
-            if (index = PatcherUtils.lastIndexOf(str, "const[", index, 300), index < 0) return !1;
+            if (index >= 0 && (index = PatcherUtils.lastIndexOf(str, "const[", index, 300)), index < 0) return !1;
+            let params = PatcherUtils.findAndParseParams(str, index - 500, 500);
+            if (!params || !params.id) return !1;
             let PREF_HIDE_SECTIONS = getGlobalPref("ui.hideSections"),
                 siglIds = [],
                 sections = {
@@ -5635,9 +5690,8 @@ true` + text;
                 let galleryId = sections[section];
                 galleryId && siglIds.push(galleryId);
             }
-            let newCode = `
-if (e && e.id) {const siglId = e.id;if (${siglIds.map((item2) => `siglId === "${item2}"`).join(" || ")}) {return null;}}
-`;
+            let checkSyntax = siglIds.map((item2) => `${params.id} === "${item2}"`).join(" || "),
+                newCode = `if (${params.id} && (${checkSyntax})) return null;`;
             return str = PatcherUtils.insertAt(str, index, newCode), str;
         },
         ignoreGenresSection(str) {
@@ -5683,14 +5737,9 @@ if (this.baseStorageKey in window.BX_EXPOSED.overrideSettings) {const settings =
             return str = PatcherUtils.replaceWith(str, index, '"All"', '"Locked"'), str;
         },
         disableTouchContextMenu(str) {
-            let index = str.indexOf('"ContextualCardActions-module__container');
-            if (index >= 0 && (index = str.indexOf('addEventListener("touchstart"', index)), index >= 0 && (index = PatcherUtils.lastIndexOf(str, "return ", index, 50)), index < 0) return !1;
+            let index = str.indexOf('.addEventListener("touchstart",');
+            if (index >= 0 && (index = PatcherUtils.indexOf(str, '.addEventListener("touchend"', index, 200)), index >= 0 && (index = PatcherUtils.lastIndexOf(str, "return ", index, 50)), index < 0) return !1;
             return str = PatcherUtils.replaceWith(str, index, "return", "return () => {};"), str;
-        },
-        optimizeGameSlugGenerator(str) {
-            let text = "/[;,/?:@&=+_`~$%#^*()!^\\u2122\\xae\\xa9]/g";
-            if (!str.includes(text)) return !1;
-            return str = str.replace(text, "window.BX_EXPOSED.GameSlugRegexes[0]"), str = str.replace("/ {2,}/g", "window.BX_EXPOSED.GameSlugRegexes[1]"), str = str.replace("/ /g", "window.BX_EXPOSED.GameSlugRegexes[2]"), str;
         },
         modifyPreloadedState(str) {
             let text = "=window.__PRELOADED_STATE__;";
@@ -5705,6 +5754,9 @@ if (this.baseStorageKey in window.BX_EXPOSED.overrideSettings) {const settings =
         },
         streamPageBeforeLoad(str) {
             return PatcherUtils.patchBeforePageLoad(str, "stream");
+        },
+        remotePlayStreamPageBeforeLoad(str) {
+            return PatcherUtils.patchBeforePageLoad(str, "remote-play-stream");
         },
         disableAbsoluteMouse(str) {
             let text = "sendAbsoluteMouseCapableMessage(e){";
@@ -5741,13 +5793,15 @@ ${subsVar} = subs;
             if (initialIndex < 0) return !1;
             let returnIndex = PatcherUtils.lastIndexOf(str, "return ", str.indexOf("SupportedInputsBadge"));
             if (returnIndex < 0) return !1;
-            let arrowIndex = PatcherUtils.lastIndexOf(str, "=>{", initialIndex, 300);
-            if (arrowIndex < 0) return !1;
-            let paramVar = PatcherUtils.getVariableNameBefore(str, arrowIndex),
+            let productIdIndex = PatcherUtils.lastIndexOf(str, ",productId:", initialIndex, 300);
+            if (productIdIndex < 0) return !1;
+            let params = PatcherUtils.findAndParseParams(str, productIdIndex - 200, 400);
+            if (!params || !params.productId) return !1;
+            let productIdVar = params.productId,
                 supportedInputIconsVar = PatcherUtils.getVariableNameAfter(str, PatcherUtils.indexOf(str, "supportedInputIcons:", initialIndex, 100, !0));
-            if (!paramVar || !supportedInputIconsVar) return !1;
+            if (!supportedInputIconsVar) return !1;
             let newCode = renderString(game_card_icons_default, {
-                param: paramVar,
+                productId: productIdVar,
                 supportedInputIcons: supportedInputIconsVar
             });
             return str = PatcherUtils.insertAt(str, returnIndex, newCode), str;
@@ -5767,14 +5821,14 @@ ${subsVar} = subs;
             return str = PatcherUtils.insertAt(str, index, `&q=${getGlobalPref("ui.imageQuality")}`), str;
         },
         injectHeaderUseEffect(str) {
-            let index = str.indexOf('"EdgewaterHeader-module__spaceBetween');
+            let index = str.indexOf('className:"Header-module__header');
             if (index > -1 && (index = PatcherUtils.lastIndexOf(str, "return", index, 300)), index < 0) return !1;
             return PatcherUtils.injectUseEffect(str, index, "Script", "ui.header.rendered");
         },
         injectErrorPageUseEffect(str) {
             let index = str.indexOf('"PureErrorPage-module__container');
-            if (index > -1 && (index = PatcherUtils.lastIndexOf(str, "return", index, 200)), index < 0) return !1;
-            return PatcherUtils.injectUseEffect(str, index, "Script", "ui.error.rendered");
+            if (index > -1 && (index = PatcherUtils.lastIndexOf(str, "})=>(0,", index, 200)), index < 0) return !1;
+            return str = PatcherUtils.insertAt(str, index + 4, "{return "), str = PatcherUtils.injectUseEffect(str, index + 5, "Script", "ui.error.rendered"), str += "}", str;
         },
         injectStreamMenuUseEffect(str) {
             let index = str.indexOf('"StreamMenu-module__container');
@@ -5800,18 +5854,30 @@ ${subsVar} = subs;
             let index = str.indexOf("GuideAchievementDetail.useParams()");
             if (index > -1 && (index = PatcherUtils.lastIndexOf(str, "const", index, 200)), index < 0) return !1;
             return PatcherUtils.injectUseEffect(str, index, "Script", "ui.guideAchievementDetail.rendered");
+        },
+        patchCustomInputIcon(str) {
+            let index = str.indexOf('.MouseAndKeyboard="MouseAndKeyboard"');
+            if (index < 0) return !1;
+            let productIdMatch = /const (\w+)=(\w+)=>{/.exec(str.substring(index, index + 200));
+            if (!productIdMatch) return !1;
+            str = str.replace(productIdMatch[0], productIdMatch[0] + `const productId = ${productIdMatch[2]};`);
+            let match = /(\w+)&&(\w+\.push\(\w+\.Touch\))/.exec(str);
+            if (!match) return !1;
+            if (str = str.replace(match[0], `(${match[1]} || window.BX_EXPOSED.hasCustomTouchControl(productId)) && ${match[2]}`), match = /(\w+)&&(\w+\.push\(\w+\.MouseAndKeyboard\))/.exec(str), match) str = str.replace(match[0], `(${match[1]} || window.BX_EXPOSED.hasCustomNativeMkb(productId)) && ${match[2]}`);
+            return str;
         }
     },
-    PATCH_ORDERS = PatcherUtils.filterPatches([...AppInterface && getGlobalPref("nativeMkb.mode") === "on" ? ["enableNativeMkb", "disableAbsoluteMouse"] : [], "exposeReactCreateComponent", "injectCreatePortal", "broadcastPollingMode", getGlobalPref("ui.gameCard.waitTime.show") && "patchSetCurrentFocus", "patchGamepadPolling", "optimizeGameSlugGenerator", "modifyPreloadedState", "detectBrowserRouterReady", "exposeStreamSession", "supportLocalCoOp", "disableStreamGate", "exposeDialogRoutes", ...getGlobalPref("ui.imageQuality") < 90 ? ["setImageQuality"] : [], "patchRequestInfoCrash", "injectErrorPageUseEffect", "streamPageBeforeLoad", "injectGuideHomeUseEffect", "injectAchievementsProgressUseEffect", "injectAchievementsDetailUseEffect", "guideAchievementsDefaultLocked", "injectHeaderUseEffect", "homePageBeforeLoad", "gameCardCustomIcons", "productDetailPageBeforeLoad", "enableTvRoutes", "overrideStorageGetSettings", getGlobalPref("ui.layout") !== "default" && "websiteLayout", getGlobalPref("game.fortnite.forceConsole") && "forceFortniteConsole", ...STATES.userAgent.capabilities.touch ? ["disableTouchContextMenu"] : [], ...getGlobalPref("block.tracking") ? ["disableAiTrack", "disableTelemetry", "blockWebRtcStatsCollector", "disableIndexDbLogging", "disableTelemetryProvider"] : [], ...getGlobalPref("xhome.enabled") ? ["remotePlayDirectConnectUrl", "remotePlayKeepAlive", "remotePlayWebTitle", "remotePlayDisableAchievementToast", "remotePlayRecentlyUsedTitleIds", STATES.userAgent.capabilities.touch && "patchUpdateInputConfigurationAsync"] : [], ...BX_FLAGS.EnableXcloudLogging ? ["enableConsoleLogging", "enableXcloudLogger"] : []]),
+    PATCH_ORDERS = PatcherUtils.filterPatches([...AppInterface && getGlobalPref("nativeMkb.mode") === "on" ? ["enableNativeMkb", "disableAbsoluteMouse"] : [], "exposeReactCreateComponent", "injectCreatePortal", "broadcastPollingMode", getGlobalPref("ui.gameCard.waitTime.show") && "patchSetCurrentFocus", "patchGamepadPolling", "modifyPreloadedState", "detectBrowserRouterReady", "exposeStreamSession", "supportLocalCoOp", "disableStreamGate", "exposeDialogRoutes", ...getGlobalPref("ui.imageQuality") < 90 ? ["setImageQuality"] : [], "patchRequestInfoCrash", "injectErrorPageUseEffect", "streamPageBeforeLoad", "remotePlayStreamPageBeforeLoad", "injectGuideHomeUseEffect", "injectAchievementsProgressUseEffect", "injectAchievementsDetailUseEffect", "guideAchievementsDefaultLocked", "injectHeaderUseEffect", "homePageBeforeLoad", "patchCustomInputIcon", "gameCardCustomIcons", "productDetailPageBeforeLoad", "enableTvRoutes", "overrideStorageGetSettings", getGlobalPref("ui.layout") !== "default" && "websiteLayout", getGlobalPref("game.fortnite.forceConsole") && "forceFortniteConsole", ...STATES.userAgent.capabilities.touch ? ["disableTouchContextMenu"] : [], ...getGlobalPref("block.tracking") ? ["disableAiTrack", "blockWebRtcStatsCollector", "disableIndexDbLogging", "disableTelemetryProvider"] : [], ...!getGlobalPref("block.features").includes("remote-play") ? ["remotePlayKeepAlive", "remotePlayDisableAchievementToast", STATES.userAgent.capabilities.touch && "patchUpdateInputConfigurationAsync"] : [], ...BX_FLAGS.EnableXcloudLogging ? ["enableConsoleLogging", "enableXcloudLogger"] : []]),
     hideSections = getGlobalPref("ui.hideSections"),
     HOME_PAGE_PATCH_ORDERS = PatcherUtils.filterPatches([hideSections.includes("genres") && "ignoreGenresSection", !getGlobalPref("block.features").includes("byog") && hideSections.includes("byog") && "ignoreByogSection", STATES.browser.capabilities.touch && hideSections.includes("touch") && "ignorePlayWithTouchSection", getGlobalPref("ui.imageQuality") < 90 && "setBackgroundImageQuality", hideSections.some((value) => ["native-mkb", "most-popular"].includes(value)) && "ignoreSiglSections", hideSections.includes("news") && "ignoreNewsSection", (getGlobalPref("block.features").includes("friends") || hideSections.includes("friends")) && "ignorePlayWithFriendsSection", hideSections.includes("all-games") && "ignoreAllGamesSection", ...blockSomeNotifications() ? ["changeNotificationsSubscription"] : []]),
-    STREAM_PAGE_PATCH_ORDERS = PatcherUtils.filterPatches(["exposeInputChannel", "patchXcloudTitleInfo", "disableGamepadDisconnectedScreen", "patchStreamHud", "playVibration", "alwaysShowStreamHud", "injectStreamMenuUseEffect", getGlobalPref("audio.volume.booster.enabled") && !getGlobalPref("stream.video.combineAudio") && "patchAudioMediaStream", getGlobalPref("audio.volume.booster.enabled") && getGlobalPref("stream.video.combineAudio") && "patchCombinedAudioVideoMediaStream", getGlobalPref("ui.feedbackDialog.disabled") && "skipFeedbackDialog", ...STATES.userAgent.capabilities.touch ? [getGlobalPref("touchController.mode") === "all" && "patchShowSensorControls", getGlobalPref("touchController.mode") === "all" && "exposeTouchLayoutManager", (getGlobalPref("touchController.mode") === "off" || getGlobalPref("touchController.autoOff")) && "disableTakRenderer", getGlobalPref("touchController.opacity.default") !== 100 && "patchTouchControlDefaultOpacity", getGlobalPref("touchController.mode") !== "off" && (getGlobalPref("mkb.enabled") || getGlobalPref("nativeMkb.mode") === "on") && "patchBabylonRendererClass"] : [], BX_FLAGS.EnableXcloudLogging && "enableConsoleLogging", "patchPollGamepads", getGlobalPref("stream.video.combineAudio") && "streamCombineSources", ...getGlobalPref("xhome.enabled") ? ["patchRemotePlayMkb", "remotePlayConnectMode"] : [], ...AppInterface && getGlobalPref("nativeMkb.mode") === "on" ? ["patchMouseAndKeyboardEnabled", "disableNativeRequestPointerLock"] : []]),
+    STREAM_PAGE_PATCH_ORDERS = PatcherUtils.filterPatches(["exposeInputChannel", "patchXcloudTitleInfo", "disableGamepadDisconnectedScreen", "patchStreamHud", "playVibration", "alwaysShowStreamHud", "injectStreamMenuUseEffect", getGlobalPref("audio.volume.booster.enabled") && !getGlobalPref("stream.video.combineAudio") && "patchAudioMediaStream", getGlobalPref("audio.volume.booster.enabled") && getGlobalPref("stream.video.combineAudio") && "patchCombinedAudioVideoMediaStream", getGlobalPref("ui.feedbackDialog.disabled") && "skipFeedbackDialog", ...STATES.userAgent.capabilities.touch ? [getGlobalPref("touchController.mode") === "all" && "patchShowSensorControls", getGlobalPref("touchController.mode") === "all" && "exposeTouchLayoutManager", (getGlobalPref("touchController.mode") === "off" || getGlobalPref("touchController.autoOff")) && "disableTakRenderer", getGlobalPref("touchController.opacity.default") !== 100 && "patchTouchControlDefaultOpacity", getGlobalPref("touchController.mode") !== "off" && (getGlobalPref("mkb.enabled") || getGlobalPref("nativeMkb.mode") === "on") && "patchBabylonRendererClass"] : [], "patchPollGamepads", getGlobalPref("stream.video.combineAudio") && "streamCombineSources", ...!getGlobalPref("block.features").includes("remote-play") ? ["remotePlayPostStreamRedirectUrl", "patchRemotePlayMkb"] : [], ...AppInterface && getGlobalPref("nativeMkb.mode") === "on" ? ["patchMouseAndKeyboardEnabled", "disableNativeRequestPointerLock"] : []]),
     PRODUCT_DETAIL_PAGE_PATCH_ORDERS = PatcherUtils.filterPatches(["detectProductDetailPage"]),
     ALL_PATCHES = [...PATCH_ORDERS, ...HOME_PAGE_PATCH_ORDERS, ...STREAM_PAGE_PATCH_ORDERS, ...PRODUCT_DETAIL_PAGE_PATCH_ORDERS];
 class Patcher {
     static remainingPatches = {
         home: HOME_PAGE_PATCH_ORDERS,
         stream: STREAM_PAGE_PATCH_ORDERS,
+        "remote-play-stream": STREAM_PAGE_PATCH_ORDERS,
         "product-detail": PRODUCT_DETAIL_PAGE_PATCH_ORDERS
     };
     static patchPage(page) {
@@ -5884,7 +5950,8 @@ class PatcherCache {
     constructor() {
         this.checkSignature(), this.CACHE = JSON.parse(window.localStorage.getItem(this.KEY_CACHE) || "{}"), BxLogger.info(LOG_TAG2, "Cache", this.CACHE);
         let pathName = window.location.pathname;
-        if (pathName.includes("/play/launch/")) Patcher.patchPage("stream");
+        if (pathName.includes("/play/consoles/launch/")) Patcher.patchPage("remote-play-stream");
+        else if (pathName.includes("/play/launch/")) Patcher.patchPage("stream");
         else if (pathName.includes("/play/games/")) Patcher.patchPage("product-detail");
         else if (pathName.endsWith("/play") || pathName.endsWith("/play/")) Patcher.patchPage("home");
         PATCH_ORDERS = this.cleanupPatches(PATCH_ORDERS), STREAM_PAGE_PATCH_ORDERS = this.cleanupPatches(STREAM_PAGE_PATCH_ORDERS), PRODUCT_DETAIL_PAGE_PATCH_ORDERS = this.cleanupPatches(PRODUCT_DETAIL_PAGE_PATCH_ORDERS), BxLogger.info(LOG_TAG2, "PATCH_ORDERS", PATCH_ORDERS.slice(0));
@@ -5892,13 +5959,15 @@ class PatcherCache {
     getSignature() {
         let scriptVersion = SCRIPT_VERSION,
             patches = JSON.stringify(ALL_PATCHES),
-            webVersion = "",
-            $link = document.querySelector('link[data-chunk="client"][href*="/client."]');
+            clientHash = "",
+            $link = document.querySelector('link[data-chunk="client"][as="script"][href*="/client."]');
         if ($link) {
             let match = /\/client\.([^\.]+)\.js/.exec($link.href);
-            match && (webVersion = match[1]);
-        } else webVersion = document.querySelector("meta[name=gamepass-app-version]")?.content ?? "";
-        return hashCode(scriptVersion + webVersion + patches);
+            match && (clientHash = match[1]);
+        }
+        let webVersion = document.querySelector("meta[name=gamepass-app-version]")?.content ?? "",
+            webVersionDate = document.querySelector("meta[name=gamepass-app-date]")?.content ?? "";
+        return `${scriptVersion}:${clientHash}:${webVersion}:${webVersionDate}:${hashCode(patches)}`;
     }
     clear() {
         window.localStorage.removeItem(this.KEY_CACHE), this.CACHE = {};
@@ -5906,7 +5975,7 @@ class PatcherCache {
     checkSignature() {
         let storedSig = window.localStorage.getItem(this.KEY_SIGNATURE) || 0,
             currentSig = this.getSignature();
-        if (currentSig !== parseInt(storedSig)) BxLogger.warning(LOG_TAG2, "Signature changed"), window.localStorage.setItem(this.KEY_SIGNATURE, currentSig.toString()), this.clear();
+        if (currentSig !== storedSig) BxLogger.warning(LOG_TAG2, "Signature changed"), window.localStorage.setItem(this.KEY_SIGNATURE, currentSig.toString()), this.clear();
         else BxLogger.info(LOG_TAG2, "Signature unchanged");
     }
     cleanupPatches(patches) {
@@ -6117,9 +6186,6 @@ var SHORTCUT_ACTIONS = {
         "ta.open": [t("true-achievements"), t("show")]
     }
 };
-
-
-
 class ControllerShortcutsManagerDialog extends BaseProfileManagerDialog {
     static instance;
     static getInstance = () => ControllerShortcutsManagerDialog.instance ?? (ControllerShortcutsManagerDialog.instance = new ControllerShortcutsManagerDialog(t("controller-shortcuts")));
@@ -7369,7 +7435,7 @@ class SettingsDialog extends NavigationDialog {
         }, {
             pref: "bx.locale",
             multiLines: !0
-        }, "server.bypassRestriction", "ui.controllerFriendly", "xhome.enabled"]
+        }, "server.bypassRestriction", "ui.controllerFriendly"]
     }, {
         group: "server",
         label: t("server"),
@@ -7485,7 +7551,7 @@ class SettingsDialog extends NavigationDialog {
         }, ($parent) => {
             $parent.appendChild(createButton({
                 label: t("clear-data"),
-                style: 8 | 128 | 64,
+                style: 4 | 16 | 128 | 64,
                 onClick: (e) => {
                     if (confirm(t("clear-data-confirm"))) clearAllData();
                 }
@@ -7543,7 +7609,7 @@ class SettingsDialog extends NavigationDialog {
         group: "video",
         label: t("video"),
         helpUrl: "https://better-xcloud.github.io/ingame-features/#video",
-        items: ["video.player.type", "video.maxFps", "video.player.powerPreference", "video.processing", "video.ratio", "video.position", "video.processing.sharpness", "video.saturation", "video.contrast", "video.brightness"]
+        items: ["video.player.type", "video.maxFps", "video.player.powerPreference", "video.processing", "video.processing.mode", "video.ratio", "video.position", "video.processing.sharpness", "video.saturation", "video.contrast", "video.brightness"]
     }];
     TAB_CONTROLLER_ITEMS = [{
         group: "controller",
@@ -8218,7 +8284,7 @@ class TrueAchievements {
     }
     open(override, xboxTitleId, id) {
         if (!xboxTitleId || xboxTitleId === "undefined") xboxTitleId = this.getStreamXboxTitleId();
-        if (AppInterface && AppInterface.openTrueAchievementsLink) {
+        if (AppInterface?.openTrueAchievementsLink) {
             AppInterface.openTrueAchievementsLink(override, xboxTitleId?.toString(), id?.toString());
             return;
         }
@@ -8247,8 +8313,10 @@ class ShortcutHandler {
     static runAction(action) {
         switch (action) {
             case "bx.settings.show":
+                SettingsDialog.getInstance().show();
                 break;
             case "stream.screenshot.capture":
+                ScreenshotManager.getInstance().takeScreenshot();
                 break;
             case "stream.video.toggle":
                 RendererShortcut.toggleVisibility();
@@ -8291,8 +8359,6 @@ class ShortcutHandler {
         }
     }
 }
-
-
 class ControllerShortcut {
     static buttonsCache = {};
     static buttonsStatus = {};
@@ -8325,7 +8391,9 @@ var FeatureGates = {
         EnableUpdateRequiredPage: !1,
         ShowForcedUpdateScreen: !1,
         EnableTakControlResizing: !0,
-        EnableLazyLoadedHome: !1
+        EnableLazyLoadedHome: !1,
+        EnableRemotePlay: !getGlobalPref("block.features").includes("remote-play"),
+        EnableConsoles: !getGlobalPref("block.features").includes("remote-play")
     },
     nativeMkbMode = getGlobalPref("nativeMkb.mode");
 if (nativeMkbMode !== "default") FeatureGates.EnableMouseAndKeyboard = nativeMkbMode === "on";
@@ -8489,8 +8557,193 @@ var BxExposed = {
             cy: "19.124",
             r: ".879"
         })));
+    },
+    hasCustomTouchControl: TouchController.hasCustomControl,
+    hasCustomNativeMkb: (productId) => {
+        return BX_FLAGS.ForceNativeMkbTitles?.includes(productId);
     }
 };
+class XhomeInterceptor {
+    static consoleAddrs = {};
+    static async handleLogin(request) {
+        try {
+            let obj = await request.clone().json();
+            obj.offeringId = "xhome", request = new Request("https://xhome.gssv-play-prod.xboxlive.com/v2/login/user", {
+                method: "POST",
+                body: JSON.stringify(obj),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+        } catch (e) {
+            alert(e), console.log(e);
+        }
+        return NATIVE_FETCH(request);
+    }
+    static async handleConfiguration(request) {
+        BxEventBus.Stream.emit("state.starting", {});
+        let response = await NATIVE_FETCH(request),
+            obj = await response.clone().json(),
+            serverDetails = obj.serverDetails,
+            pairs = [
+                ["ipAddress", "port"],
+                ["ipV4Address", "ipV4Port"],
+                ["ipV6Address", "ipV6Port"]
+            ];
+        XhomeInterceptor.consoleAddrs = {};
+        for (let pair of pairs) {
+            let [keyAddr, keyPort] = pair;
+            if (keyAddr && keyPort && serverDetails[keyAddr]) {
+                let port = serverDetails[keyPort],
+                    ports = new Set;
+                port && ports.add(port), ports.add(9002), XhomeInterceptor.consoleAddrs[serverDetails[keyAddr]] = Array.from(ports);
+            }
+        }
+        return response.json = () => Promise.resolve(obj), response.text = () => Promise.resolve(JSON.stringify(obj)), response;
+    }
+    static async handleInputConfigs(request, opts) {
+        let response = await NATIVE_FETCH(request);
+        if (getGlobalPref("touchController.mode") !== "all") return response;
+        let obj = await response.clone().json(),
+            xboxTitleId = JSON.parse(opts.body).titleIds[0];
+        TouchController.setXboxTitleId(xboxTitleId);
+        let inputConfigs = obj[0],
+            hasTouchSupport = inputConfigs.supportedTabs.length > 0;
+        if (!hasTouchSupport) {
+            let supportedInputTypes = inputConfigs.supportedInputTypes;
+            hasTouchSupport = supportedInputTypes.includes("NativeTouch") || supportedInputTypes.includes("CustomTouchOverlay");
+        }
+        if (hasTouchSupport) TouchController.disable(), BxEvent.dispatch(window, BxEvent.CUSTOM_TOUCH_LAYOUTS_LOADED, {
+            data: null
+        });
+        else TouchController.enable(), TouchController.requestCustomLayouts();
+        return response.json = () => Promise.resolve(obj), response.text = () => Promise.resolve(JSON.stringify(obj)), response;
+    }
+    static async handleTitles(request) {
+        let clone = request.clone(),
+            headers = {};
+        for (let pair of clone.headers.entries()) headers[pair[0]] = pair[1];
+        let index = request.url.indexOf(".xboxlive.com");
+        return request = new Request("https://wus.core.gssv-play-prod" + request.url.substring(index), {
+            method: clone.method,
+            body: await clone.text(),
+            headers
+        }), NATIVE_FETCH(request);
+    }
+    static async handlePlay(request) {
+        BxEventBus.Stream.emit("state.loading", {});
+        let body = await request.clone().json(),
+            newRequest = new Request(request, {
+                body: JSON.stringify(body)
+            });
+        return NATIVE_FETCH(newRequest);
+    }
+    static async handle(request) {
+        TouchController.disable();
+        let clone = request.clone(),
+            headers = {};
+        for (let pair of clone.headers.entries()) headers[pair[0]] = pair[1];
+        let osName = getOsNameFromResolution(getGlobalPref("xhome.video.resolution"));
+        headers["x-ms-device-info"] = JSON.stringify(generateMsDeviceInfo(osName));
+        let opts = {
+            method: clone.method,
+            headers
+        };
+        if (clone.method === "POST") opts.body = await clone.text();
+        let url = request.url;
+        if (request = new Request(url, opts), url.includes("/configuration")) return XhomeInterceptor.handleConfiguration(request);
+        else if (url.endsWith("/sessions/home/play")) return XhomeInterceptor.handlePlay(request);
+        else if (url.includes("inputconfigs")) return XhomeInterceptor.handleInputConfigs(request, opts);
+        else if (url.includes("/login/user")) return XhomeInterceptor.handleLogin(request);
+        else if (url.endsWith("/titles")) return XhomeInterceptor.handleTitles(request);
+        else if (url && url.endsWith("/ice") && url.includes("/sessions/") && request.method === "GET") return patchIceCandidates(request, XhomeInterceptor.consoleAddrs);
+        return await NATIVE_FETCH(request);
+    }
+}
+
+function getPreferredServerRegion(shortName = !1) {
+    let preferredRegion = getGlobalPref("server.region"),
+        serverRegions = STATES.serverRegions;
+    if (preferredRegion in serverRegions)
+        if (shortName && serverRegions[preferredRegion].shortName) return serverRegions[preferredRegion].shortName;
+        else return preferredRegion;
+    for (let regionName in serverRegions) {
+        let region = serverRegions[regionName];
+        if (!region.isDefault) continue;
+        if (shortName && region.shortName) return region.shortName;
+        else return regionName;
+    }
+    return null;
+}
+class LoadingScreen {
+    static $bgStyle;
+    static $waitTimeBox;
+    static waitTimeInterval = null;
+    static orgWebTitle;
+    static secondsToString(seconds) {
+        let m = Math.floor(seconds / 60),
+            s = Math.floor(seconds % 60),
+            mDisplay = m > 0 ? `${m}m` : "",
+            sDisplay = `${s}s`.padStart(s >= 0 ? 3 : 4, "0");
+        return mDisplay + sDisplay;
+    }
+    static setup() {
+        let titleInfo = STATES.currentStream.titleInfo;
+        if (!titleInfo) return;
+        if (!LoadingScreen.$bgStyle) {
+            let $bgStyle = CE("style");
+            document.documentElement.appendChild($bgStyle), LoadingScreen.$bgStyle = $bgStyle;
+        }
+        if (titleInfo.productInfo) LoadingScreen.setBackground(titleInfo.productInfo.heroImageUrl || titleInfo.productInfo.titledHeroImageUrl || titleInfo.productInfo.tileImageUrl);
+        if (getGlobalPref("loadingScreen.rocket") === "hide") LoadingScreen.hideRocket();
+    }
+    static hideRocket() {
+        let $bgStyle = LoadingScreen.$bgStyle;
+        $bgStyle.textContent += "#game-stream div[class*=RocketAnimation-module__container] > svg{display:none}#game-stream video[class*=RocketAnimationVideo-module__video]{display:none}";
+    }
+    static setBackground(imageUrl) {
+        let $bgStyle = LoadingScreen.$bgStyle;
+        imageUrl = imageUrl + "?w=1920";
+        let imageQuality = getGlobalPref("ui.imageQuality");
+        if (imageQuality !== 90) imageUrl += "&q=" + imageQuality;
+        $bgStyle.textContent += '#game-stream{background-color:transparent !important;background-position:center center !important;background-repeat:no-repeat !important;background-size:cover !important}#game-stream rect[width="800"]{transition:opacity .3s ease-in-out !important}' + `#game-stream {background-image: linear-gradient(#00000033, #000000e6), url(${imageUrl}) !important;}`;
+        let bg = new Image;
+        bg.onload = (e) => {
+            $bgStyle.textContent += '#game-stream rect[width="800"]{opacity:0 !important}';
+        }, bg.src = imageUrl;
+    }
+    static setupWaitTime(waitTime) {
+        if (getGlobalPref("loadingScreen.rocket") === "hide-queue") LoadingScreen.hideRocket();
+        let secondsLeft = waitTime,
+            $countDown, $estimated;
+        LoadingScreen.orgWebTitle = document.title;
+        let endDate = new Date,
+            timeZoneOffsetSeconds = endDate.getTimezoneOffset() * 60;
+        endDate.setSeconds(endDate.getSeconds() + waitTime - timeZoneOffsetSeconds);
+        let endDateStr = endDate.toISOString().slice(0, 19);
+        endDateStr = endDateStr.substring(0, 10) + " " + endDateStr.substring(11, 19), endDateStr += ` (${LoadingScreen.secondsToString(waitTime)})`;
+        let $waitTimeBox = LoadingScreen.$waitTimeBox;
+        if (!$waitTimeBox) $waitTimeBox = CE("div", {
+            class: "bx-wait-time-box"
+        }, CE("label", !1, t("server")), CE("span", !1, getPreferredServerRegion()), CE("label", !1, t("wait-time-estimated")), $estimated = CE("span", {}), CE("label", !1, t("wait-time-countdown")), $countDown = CE("span", {})), document.documentElement.appendChild($waitTimeBox), LoadingScreen.$waitTimeBox = $waitTimeBox;
+        else $waitTimeBox.classList.remove("bx-gone"), $estimated = $waitTimeBox.querySelector(".bx-wait-time-estimated"), $countDown = $waitTimeBox.querySelector(".bx-wait-time-countdown");
+        $estimated.textContent = endDateStr, $countDown.textContent = LoadingScreen.secondsToString(secondsLeft), document.title = `[${$countDown.textContent}] ${LoadingScreen.orgWebTitle}`, LoadingScreen.waitTimeInterval = window.setInterval(() => {
+            if (secondsLeft--, $countDown.textContent = LoadingScreen.secondsToString(secondsLeft), document.title = `[${$countDown.textContent}] ${LoadingScreen.orgWebTitle}`, secondsLeft <= 0) LoadingScreen.waitTimeInterval && clearInterval(LoadingScreen.waitTimeInterval), LoadingScreen.waitTimeInterval = null;
+        }, 1000);
+    }
+    static hide() {
+        if (LoadingScreen.orgWebTitle && (document.title = LoadingScreen.orgWebTitle), LoadingScreen.$waitTimeBox && LoadingScreen.$waitTimeBox.classList.add("bx-gone"), getGlobalPref("loadingScreen.gameArt.show") && LoadingScreen.$bgStyle) {
+            let $rocketBg = document.querySelector('#game-stream rect[width="800"]');
+            $rocketBg && $rocketBg.addEventListener("transitionend", (e) => {
+                LoadingScreen.$bgStyle.textContent += "#game-stream{background:#000 !important}";
+            }), LoadingScreen.$bgStyle.textContent += '#game-stream rect[width="800"]{opacity:1 !important}';
+        }
+        setTimeout(LoadingScreen.reset, 2000);
+    }
+    static reset() {
+        LoadingScreen.$bgStyle && (LoadingScreen.$bgStyle.textContent = ""), LoadingScreen.$waitTimeBox && LoadingScreen.$waitTimeBox.classList.add("bx-gone"), LoadingScreen.waitTimeInterval && clearInterval(LoadingScreen.waitTimeInterval), LoadingScreen.waitTimeInterval = null;
+    }
+}
 
 function localRedirect(path) {
     let url = window.location.href.substring(0, 31) + path,
@@ -8507,21 +8760,6 @@ function localRedirect(path) {
     }), $pageContent.appendChild($anchor), $anchor.click();
 }
 window.localRedirect = localRedirect;
-
-function getPreferredServerRegion(shortName = !1) {
-    let preferredRegion = getGlobalPref("server.region"),
-        serverRegions = STATES.serverRegions;
-    if (preferredRegion in serverRegions)
-        if (shortName && serverRegions[preferredRegion].shortName) return serverRegions[preferredRegion].shortName;
-        else return preferredRegion;
-    for (let regionName in serverRegions) {
-        let region = serverRegions[regionName];
-        if (!region.isDefault) continue;
-        if (shortName && region.shortName) return region.shortName;
-        else return regionName;
-    }
-    return null;
-}
 class HeaderSection {
     static instance;
     static getInstance = () => HeaderSection.instance ?? (HeaderSection.instance = new HeaderSection);
@@ -8540,24 +8778,28 @@ class HeaderSection {
         let $btnSettings = this.$btnSettings = createButton({
             classes: ["bx-header-settings-button", "bx-gone"],
             label: t("better-xcloud"),
-            style: 16 | 32 | 64 | 256
-
+            style: 16 | 32 | 64 | 256,
         });
-        this.$buttonsWrapper = CE("div", !1, getGlobalPref("xhome.enabled") ? this.$btnRemotePlay : null, this.$btnSettings), BxEventBus.Script.on("xcloud.server", ({
+        this.$buttonsWrapper = CE("div", !1, !getGlobalPref("block.features").includes("remote-play") ? this.$btnRemotePlay : null, this.$btnSettings), BxEventBus.Script.on("xcloud.server", ({
             status
         }) => {
             if (status === "ready") {
                 STATES.isSignedIn = !0, $btnSettings.querySelector("span").textContent = getPreferredServerRegion(!0) || t("better-xcloud");
                 let PREF_LATEST_VERSION = getGlobalPref("version.latest");
                 if (!SCRIPT_VERSION.includes("beta") && PREF_LATEST_VERSION && PREF_LATEST_VERSION !== SCRIPT_VERSION) $btnSettings.setAttribute("data-update-available", "true");
-            } else if (status === "unavailable") {
-
+            } else if (status === "error") Toast.show(t("server-list-error"), "❌", {
+                instant: !0
+            });
+            else if (status === "unavailable") {
+                if (STATES.supportedRegion = !1, document.querySelector("div[class^=UnsupportedMarketPage-module__container]")) SettingsDialog.getInstance().show();
             }
             $btnSettings.classList.remove("bx-gone");
         });
     }
     checkHeader = () => {
-        let $target = document.querySelector("#PageContent div[class*=EdgewaterHeader-module__rightSectionSpacing]");
+        let $header = document.querySelector("#gamepass-root header[class^=Header-module__header]");
+        if (!$header) return;
+        let $target = $header.querySelector("div[class*=EdgewaterHeader-module__rightSectionSpacing], div[class*=RemotePlayHeader-module__rightSectionSpacing]");
         if (!$target) $target = document.querySelector("div[class^=UnsupportedMarketPage-module__buttons]");
         if ($target?.appendChild(this.$buttonsWrapper), !STATES.isSignedIn) BxEventBus.Script.emit("xcloud.server", {
             status: "signed-out"
@@ -8599,18 +8841,29 @@ class RemotePlayDialog extends NavigationDialog {
             }, "1080p (HQ)"));
         $resolutions = BxSelectElement.create($resolutions), $resolutions.addEventListener("input", (e) => {
             let value = e.target.value;
-            $settingNote.textContent = value === "1080p" ? "✅ " + t("can-stream-xbox-360-games") : "❌ " + t("cant-stream-xbox-360-games"), setGlobalPref("xhome.video.resolution", value, "ui");
+            $settingNote.textContent = `✅ ${t("xbox-360-games")} ${value === "1080p-hq" ? "❌" : "✅"} ${t("xbox-apps")}`, setGlobalPref("xhome.video.resolution", value, "ui");
         }), $resolutions.value = currentResolution, BxEvent.dispatch($resolutions, "input", {
             manualTrigger: !0
         });
         let $qualitySettings = CE("div", {
             class: "bx-remote-play-settings"
-        }, CE("div", !1, CE("label", !1, t("target-resolution"), $settingNote), $resolutions));
+        }, CE("div", !1, CE("label", !1, t("target-resolution"), $settingNote), $resolutions), CE("div", !1, CE("label", {
+            for: `bx_setting_${escapeCssSelector("xhome.ipv6.prefer")}`
+        }, t("prefer-ipv6-server")), SettingElement.fromPref("xhome.ipv6.prefer")));
         $fragment.appendChild($qualitySettings);
         let manager = RemotePlayManager.getInstance(),
-            consoles = manager.getConsoles();
+            consoles = manager.getConsoles(),
+            createConsoleShortcut = (e) => {
+                let {
+                    serverId,
+                    deviceName
+                } = e.target.dataset, optionsJson = JSON.stringify({
+                    resolution: getGlobalPref("xhome.video.resolution")
+                });
+                AppInterface?.createConsoleShortcut(serverId, deviceName, optionsJson);
+            };
         for (let con of consoles) {
-            let $child = CE("div", {
+            let $connect, $child = CE("div", {
                 class: "bx-remote-play-device-wrapper"
             }, CE("div", {
                 class: "bx-remote-play-device-info"
@@ -8620,13 +8873,25 @@ class RemotePlayDialog extends NavigationDialog {
                 class: "bx-remote-play-console-type"
             }, con.consoleType.replace("Xbox", ""))), CE("div", {
                 class: "bx-remote-play-power-state"
-            }, this.STATE_LABELS[con.powerState])), createButton({
+            }, this.STATE_LABELS[con.powerState])), AppInterface ? createButton({
+                attributes: {
+                    "data-server-id": con.serverId,
+                    "data-device-name": con.deviceName
+                },
+                icon: BxIcon.CREATE_SHORTCUT,
+                style: 8 | 64,
+                title: t("create-shortcut"),
+                onClick: createConsoleShortcut
+            }) : null, $connect = createButton({
                 classes: ["bx-remote-play-connect-button"],
                 label: t("console-connect"),
                 style: 1 | 64,
                 onClick: (e) => manager.play(con.serverId)
             }));
-            $fragment.appendChild($child);
+            setNearby($child, {
+                orientation: "horizontal",
+                focus: $connect
+            }), $fragment.appendChild($child);
         }
         $fragment.appendChild(CE("div", {
             class: "bx-remote-play-buttons",
@@ -8651,7 +8916,7 @@ class RemotePlayDialog extends NavigationDialog {
         return this.$container;
     }
     focusIfNeeded() {
-        let $btnConnect = this.$container.querySelector(".bx-remote-play-device-wrapper button");
+        let $btnConnect = this.$container.querySelector(".bx-remote-play-device-wrapper button:last-of-type");
         $btnConnect && $btnConnect.focus();
     }
 }
@@ -8659,7 +8924,7 @@ class RemotePlayManager {
     static instance;
     static getInstance() {
         if (typeof RemotePlayManager.instance === "undefined")
-            if (getGlobalPref("xhome.enabled")) RemotePlayManager.instance = new RemotePlayManager;
+            if (!getGlobalPref("block.features").includes("remote-play")) RemotePlayManager.instance = new RemotePlayManager;
             else RemotePlayManager.instance = null;
         return RemotePlayManager.instance;
     }
@@ -8738,6 +9003,9 @@ class RemotePlayManager {
                 Authorization: `Bearer ${this.XHOME_TOKEN}`
             }
         };
+        this.regions.sort((a, b) => {
+            return a.isDefault ? -1 : 0;
+        });
         for (let region of this.regions) try {
             let request = new Request(`${region.baseUri}/v6/servers/home?mr=50`, options),
                 json = await (await fetch(request)).json();
@@ -8750,9 +9018,7 @@ class RemotePlayManager {
     }
     play(serverId, resolution) {
         if (resolution) setGlobalPref("xhome.video.resolution", resolution, "ui");
-        STATES.remotePlay.config = {
-            serverId
-        }, window.BX_REMOTE_PLAY_CONFIG = STATES.remotePlay.config, localRedirect("/launch/fortnite/BT5P2X999VH2#remote-play");
+        localRedirect("/consoles/launch/" + serverId);
     }
     togglePopup(force = null) {
         if (!this.isReady()) {
@@ -8767,187 +9033,8 @@ class RemotePlayManager {
         }
         RemotePlayDialog.getInstance().show();
     }
-    static detect() {
-        if (!getGlobalPref("xhome.enabled")) return;
-        if (STATES.remotePlay.isPlaying = window.location.pathname.includes("/launch/") && window.location.hash.startsWith("#remote-play"), STATES.remotePlay?.isPlaying) window.BX_REMOTE_PLAY_CONFIG = STATES.remotePlay.config, window.history.replaceState({
-            origin: "better-xcloud"
-        }, "", "https://www.xbox.com/" + location.pathname.substring(1, 6) + "/play");
-        else window.BX_REMOTE_PLAY_CONFIG = null;
-    }
     isReady() {
         return this.consoles !== null;
-    }
-}
-class XhomeInterceptor {
-    static consoleAddrs = {};
-    static async handleLogin(request) {
-        try {
-            let obj = await request.clone().json();
-            obj.offeringId = "xhome", request = new Request("https://xhome.gssv-play-prod.xboxlive.com/v2/login/user", {
-                method: "POST",
-                body: JSON.stringify(obj),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
-        } catch (e) {
-            alert(e), console.log(e);
-        }
-        return NATIVE_FETCH(request);
-    }
-    static async handleConfiguration(request) {
-        BxEventBus.Stream.emit("state.starting", {});
-        let response = await NATIVE_FETCH(request),
-            obj = await response.clone().json(),
-            serverDetails = obj.serverDetails,
-            pairs = [
-                ["ipAddress", "port"],
-                ["ipV4Address", "ipV4Port"],
-                ["ipV6Address", "ipV6Port"]
-            ];
-        XhomeInterceptor.consoleAddrs = {};
-        for (let pair of pairs) {
-            let [keyAddr, keyPort] = pair;
-            if (keyAddr && keyPort && serverDetails[keyAddr]) {
-                let port = serverDetails[keyPort],
-                    ports = new Set;
-                port && ports.add(port), ports.add(9002), XhomeInterceptor.consoleAddrs[serverDetails[keyAddr]] = Array.from(ports);
-            }
-        }
-        return response.json = () => Promise.resolve(obj), response.text = () => Promise.resolve(JSON.stringify(obj)), response;
-    }
-    static async handleInputConfigs(request, opts) {
-        let response = await NATIVE_FETCH(request);
-        if (getGlobalPref("touchController.mode") !== "all") return response;
-        let obj = await response.clone().json(),
-            xboxTitleId = JSON.parse(opts.body).titleIds[0];
-        TouchController.setXboxTitleId(xboxTitleId);
-        let inputConfigs = obj[0],
-            hasTouchSupport = inputConfigs.supportedTabs.length > 0;
-        if (!hasTouchSupport) {
-            let supportedInputTypes = inputConfigs.supportedInputTypes;
-            hasTouchSupport = supportedInputTypes.includes("NativeTouch") || supportedInputTypes.includes("CustomTouchOverlay");
-        }
-        if (hasTouchSupport) TouchController.disable(), BxEvent.dispatch(window, BxEvent.CUSTOM_TOUCH_LAYOUTS_LOADED, {
-            data: null
-        });
-        else TouchController.enable(), TouchController.requestCustomLayouts(xboxTitleId);
-        return response.json = () => Promise.resolve(obj), response.text = () => Promise.resolve(JSON.stringify(obj)), response;
-    }
-    static async handleTitles(request) {
-        let clone = request.clone(),
-            headers = {};
-        for (let pair of clone.headers.entries()) headers[pair[0]] = pair[1];
-        headers.authorization = `Bearer ${RemotePlayManager.getInstance().getXcloudToken()}`;
-        let index = request.url.indexOf(".xboxlive.com");
-        return request = new Request("https://wus.core.gssv-play-prod" + request.url.substring(index), {
-            method: clone.method,
-            body: await clone.text(),
-            headers
-        }), NATIVE_FETCH(request);
-    }
-    static async handlePlay(request) {
-        BxEventBus.Stream.emit("state.loading", {});
-        let body = await request.clone().json(),
-            newRequest = new Request(request, {
-                body: JSON.stringify(body)
-            });
-        return NATIVE_FETCH(newRequest);
-    }
-    static async handle(request) {
-        TouchController.disable();
-        let clone = request.clone(),
-            headers = {};
-        for (let pair of clone.headers.entries()) headers[pair[0]] = pair[1];
-        headers.authorization = `Bearer ${RemotePlayManager.getInstance().getXhomeToken()}`;
-        let osName = getOsNameFromResolution(getGlobalPref("xhome.video.resolution"));
-        headers["x-ms-device-info"] = JSON.stringify(generateMsDeviceInfo(osName));
-        let opts = {
-            method: clone.method,
-            headers
-        };
-        if (clone.method === "POST") opts.body = await clone.text();
-        let url = request.url;
-        if (!url.includes("/servers/home")) {
-            let parsed = new URL(url);
-            url = STATES.remotePlay.server + parsed.pathname;
-        }
-        if (request = new Request(url, opts), url.includes("/configuration")) return XhomeInterceptor.handleConfiguration(request);
-        else if (url.endsWith("/sessions/home/play")) return XhomeInterceptor.handlePlay(request);
-        else if (url.includes("inputconfigs")) return XhomeInterceptor.handleInputConfigs(request, opts);
-        else if (url.includes("/login/user")) return XhomeInterceptor.handleLogin(request);
-        else if (url.endsWith("/titles")) return XhomeInterceptor.handleTitles(request);
-        else if (url && url.endsWith("/ice") && url.includes("/sessions/") && request.method === "GET") return patchIceCandidates(request, XhomeInterceptor.consoleAddrs);
-        return await NATIVE_FETCH(request);
-    }
-}
-class LoadingScreen {
-    static $bgStyle;
-    static $waitTimeBox;
-    static waitTimeInterval = null;
-    static orgWebTitle;
-    static secondsToString(seconds) {
-        let m = Math.floor(seconds / 60),
-            s = Math.floor(seconds % 60),
-            mDisplay = m > 0 ? `${m}m` : "",
-            sDisplay = `${s}s`.padStart(s >= 0 ? 3 : 4, "0");
-        return mDisplay + sDisplay;
-    }
-    static setup() {
-        let titleInfo = STATES.currentStream.titleInfo;
-        if (!titleInfo) return;
-        if (!LoadingScreen.$bgStyle) {
-            let $bgStyle = CE("style");
-            document.documentElement.appendChild($bgStyle), LoadingScreen.$bgStyle = $bgStyle;
-        }
-        if (titleInfo.productInfo) LoadingScreen.setBackground(titleInfo.productInfo.heroImageUrl || titleInfo.productInfo.titledHeroImageUrl || titleInfo.productInfo.tileImageUrl);
-        if (getGlobalPref("loadingScreen.rocket") === "hide") LoadingScreen.hideRocket();
-    }
-    static hideRocket() {
-        let $bgStyle = LoadingScreen.$bgStyle;
-        $bgStyle.textContent += "#game-stream div[class*=RocketAnimation-module__container] > svg{display:none}#game-stream video[class*=RocketAnimationVideo-module__video]{display:none}";
-    }
-    static setBackground(imageUrl) {
-        let $bgStyle = LoadingScreen.$bgStyle;
-        imageUrl = imageUrl + "?w=1920";
-        let imageQuality = getGlobalPref("ui.imageQuality");
-        if (imageQuality !== 90) imageUrl += "&q=" + imageQuality;
-        $bgStyle.textContent += '#game-stream{background-color:transparent !important;background-position:center center !important;background-repeat:no-repeat !important;background-size:cover !important}#game-stream rect[width="800"]{transition:opacity .3s ease-in-out !important}' + `#game-stream {background-image: linear-gradient(#00000033, #000000e6), url(${imageUrl}) !important;}`;
-        let bg = new Image;
-        bg.onload = (e) => {
-            $bgStyle.textContent += '#game-stream rect[width="800"]{opacity:0 !important}';
-        }, bg.src = imageUrl;
-    }
-    static setupWaitTime(waitTime) {
-        if (getGlobalPref("loadingScreen.rocket") === "hide-queue") LoadingScreen.hideRocket();
-        let secondsLeft = waitTime,
-            $countDown, $estimated;
-        LoadingScreen.orgWebTitle = document.title;
-        let endDate = new Date,
-            timeZoneOffsetSeconds = endDate.getTimezoneOffset() * 60;
-        endDate.setSeconds(endDate.getSeconds() + waitTime - timeZoneOffsetSeconds);
-        let endDateStr = endDate.toISOString().slice(0, 19);
-        endDateStr = endDateStr.substring(0, 10) + " " + endDateStr.substring(11, 19), endDateStr += ` (${LoadingScreen.secondsToString(waitTime)})`;
-        let $waitTimeBox = LoadingScreen.$waitTimeBox;
-        if (!$waitTimeBox) $waitTimeBox = CE("div", {
-            class: "bx-wait-time-box"
-        }, CE("label", !1, t("server")), CE("span", !1, getPreferredServerRegion()), CE("label", !1, t("wait-time-estimated")), $estimated = CE("span", {}), CE("label", !1, t("wait-time-countdown")), $countDown = CE("span", {})), document.documentElement.appendChild($waitTimeBox), LoadingScreen.$waitTimeBox = $waitTimeBox;
-        else $waitTimeBox.classList.remove("bx-gone"), $estimated = $waitTimeBox.querySelector(".bx-wait-time-estimated"), $countDown = $waitTimeBox.querySelector(".bx-wait-time-countdown");
-        $estimated.textContent = endDateStr, $countDown.textContent = LoadingScreen.secondsToString(secondsLeft), document.title = `[${$countDown.textContent}] ${LoadingScreen.orgWebTitle}`, LoadingScreen.waitTimeInterval = window.setInterval(() => {
-            if (secondsLeft--, $countDown.textContent = LoadingScreen.secondsToString(secondsLeft), document.title = `[${$countDown.textContent}] ${LoadingScreen.orgWebTitle}`, secondsLeft <= 0) LoadingScreen.waitTimeInterval && clearInterval(LoadingScreen.waitTimeInterval), LoadingScreen.waitTimeInterval = null;
-        }, 1000);
-    }
-    static hide() {
-        if (LoadingScreen.orgWebTitle && (document.title = LoadingScreen.orgWebTitle), LoadingScreen.$waitTimeBox && LoadingScreen.$waitTimeBox.classList.add("bx-gone"), getGlobalPref("loadingScreen.gameArt.show") && LoadingScreen.$bgStyle) {
-            let $rocketBg = document.querySelector('#game-stream rect[width="800"]');
-            $rocketBg && $rocketBg.addEventListener("transitionend", (e) => {
-                LoadingScreen.$bgStyle.textContent += "#game-stream{background:#000 !important}";
-            }), LoadingScreen.$bgStyle.textContent += '#game-stream rect[width="800"]{opacity:1 !important}';
-        }
-        setTimeout(LoadingScreen.reset, 2000);
-    }
-    static reset() {
-        LoadingScreen.$bgStyle && (LoadingScreen.$bgStyle.textContent = ""), LoadingScreen.$waitTimeBox && LoadingScreen.$waitTimeBox.classList.add("bx-gone"), LoadingScreen.waitTimeInterval && clearInterval(LoadingScreen.waitTimeInterval), LoadingScreen.waitTimeInterval = null;
     }
 }
 class GuideMenu {
@@ -8968,8 +9055,12 @@ class GuideMenu {
                 scriptSettings: createButton({
                     label: t("better-xcloud"),
                     icon: BxIcon.BETTER_XCLOUD,
-                    style: 128 | 64 | 1
-
+                    style: 128 | 64 | 1,
+                    onClick: () => {
+                        BxEventBus.Script.once("dialog.dismissed", () => {
+                      
+                        }), this.closeGuideMenu();
+                    }
                 }),
                 closeApp: AppInterface && createButton({
                     icon: BxIcon.POWER,
@@ -9253,7 +9344,15 @@ class XcloudInterceptor {
             let ip = BypassServerIps[bypassServer];
             ip && request.headers.set("X-Forwarded-For", ip);
         }
-        let response = await NATIVE_FETCH(request, init);
+        let response;
+        try {
+            response = await NATIVE_FETCH(request, init);
+        } catch (e) {
+            BxEventBus.Script.emit("xcloud.server", {
+                status: "error"
+            });
+            return;
+        }
         if (response.status !== 200) return BxEventBus.Script.emit("xcloud.server", {
             status: "unavailable"
         }), response;
@@ -9379,8 +9478,11 @@ function updateIceCandidates(candidates, options) {
         lst = [];
     for (let item2 of candidates) {
         if (item2.candidate == "a=end-of-candidates") continue;
-        let groups = pattern.exec(item2.candidate).groups;
-        lst.push(groups);
+        let match = pattern.exec(item2.candidate);
+        if (match && match.groups) {
+            let groups = match.groups;
+            lst.push(groups);
+        }
     }
     if (options.preferIpv6Server) lst.sort((a, b) => {
         let firstIp = a.ip,
@@ -9409,7 +9511,7 @@ async function patchIceCandidates(request, consoleAddrs) {
         text = await response.clone().text();
     if (!text.length) return response;
     let options = {
-            preferIpv6Server: getGlobalPref("server.ipv6.prefer"),
+            preferIpv6Server: getGlobalPref(consoleAddrs ? "xhome.ipv6.prefer" : "server.ipv6.prefer"),
             consoleAddrs
         },
         obj = JSON.parse(text),
@@ -9491,7 +9593,7 @@ function interceptHttpRequests() {
             return response.json = () => Promise.resolve(obj), response;
         }
         let requestType;
-        if (url.includes("/sessions/home") || url.includes("xhome.") || STATES.remotePlay.isPlaying && url.endsWith("/inputconfigs")) requestType = "xhome";
+        if (url.includes("/sessions/home") || url.includes("xhome.") || window.location.pathname.includes("/play/consoles/launch/") && url.endsWith("/inputconfigs")) requestType = "xhome";
         else requestType = "xcloud";
         if (requestType === "xhome") return XhomeInterceptor.handle(request);
         return XcloudInterceptor.handle(request, init);
@@ -9556,7 +9658,7 @@ function getOsNameFromResolution(resolution) {
 }
 
 function addCss() {
-    let css = ':root{--bx-title-font:Bahnschrift,Arial,Helvetica,sans-serif;--bx-title-font-semibold:Bahnschrift Semibold,Arial,Helvetica,sans-serif;--bx-normal-font:"Segoe UI",Arial,Helvetica,sans-serif;--bx-monospaced-font:Consolas,"Courier New",Courier,monospace;--bx-promptfont-font:promptfont;--bx-button-height:40px;--bx-default-button-color:#2d3036;--bx-default-button-rgb:45,48,54;--bx-default-button-hover-color:#515863;--bx-default-button-hover-rgb:81,88,99;--bx-default-button-active-color:#222428;--bx-default-button-active-rgb:34,36,40;--bx-default-button-disabled-color:#8e8e8e;--bx-default-button-disabled-rgb:142,142,142;--bx-primary-button-color:#008746;--bx-primary-button-rgb:0,135,70;--bx-primary-button-hover-color:#04b358;--bx-primary-button-hover-rgb:4,179,88;--bx-primary-button-active-color:#044e2a;--bx-primary-button-active-rgb:4,78,42;--bx-primary-button-disabled-color:#448262;--bx-primary-button-disabled-rgb:68,130,98;--bx-warning-button-color:#c16e04;--bx-warning-button-rgb:193,110,4;--bx-warning-button-hover-color:#fa9005;--bx-warning-button-hover-rgb:250,144,5;--bx-warning-button-active-color:#965603;--bx-warning-button-active-rgb:150,86,3;--bx-warning-button-disabled-color:#a2816c;--bx-warning-button-disabled-rgb:162,129,108;--bx-danger-button-color:#c10404;--bx-danger-button-rgb:193,4,4;--bx-danger-button-hover-color:#e61d1d;--bx-danger-button-hover-rgb:230,29,29;--bx-danger-button-active-color:#a26c6c;--bx-danger-button-active-rgb:162,108,108;--bx-danger-button-disabled-color:#bd8282;--bx-danger-button-disabled-rgb:189,130,130;--bx-fullscreen-text-z-index:9999;--bx-toast-z-index:6000;--bx-key-binding-dialog-z-index:5010;--bx-key-binding-dialog-overlay-z-index:5000;--bx-stats-bar-z-index:4010;--bx-navigation-dialog-z-index:3010;--bx-navigation-dialog-overlay-z-index:3000;--bx-mkb-pointer-lock-msg-z-index:2000;--bx-game-bar-z-index:1000;--bx-screenshot-animation-z-index:200;--bx-wait-time-box-z-index:100}@font-face{font-family:\'promptfont\';src:url("https://redphx.github.io/better-xcloud/fonts/promptfont.otf");unicode-range:U+2196-E011,U+27F6,U+FF31}#StreamHud div[class^=HUDButton-module__hiddenContainer] ~ div:not([class^=HUDButton-module__hiddenContainer]){opacity:0;pointer-events:none !important;position:absolute;top:-9999px;left:-9999px}@media screen and (max-width:640px){header a[href="/play"]{display:none}}.bx-full-width{width:100% !important}.bx-full-height{height:100% !important}.bx-auto-height{height:auto !important}.bx-no-scroll{overflow:hidden !important}.bx-hide-scroll-bar{scrollbar-width:none}.bx-hide-scroll-bar::-webkit-scrollbar{display:none}.bx-gone{display:none !important}.bx-offscreen{position:absolute !important;top:-9999px !important;left:-9999px !important;visibility:hidden !important}.bx-hidden{visibility:hidden !important}.bx-invisible{opacity:0}.bx-unclickable{pointer-events:none}.bx-pixel{width:1px !important;height:1px !important}.bx-no-margin{margin:0 !important}.bx-no-padding{padding:0 !important}.bx-prompt{font-family:var(--bx-promptfont-font) !important}.bx-monospaced{font-family:var(--bx-monospaced-font) !important}.bx-line-through{text-decoration:line-through !important}.bx-normal-case{text-transform:none !important}.bx-normal-link{text-transform:none !important;text-align:left !important;font-weight:400 !important;font-family:var(--bx-normal-font) !important}.bx-frosted{backdrop-filter:blur(4px) brightness(1.5)}select[multiple],select[multiple]:focus{overflow:auto;border:none}select[multiple] option,select[multiple]:focus option{padding:4px 6px}select[multiple] option:checked,select[multiple]:focus option:checked{background:#1a7bc0 linear-gradient(0deg,#1a7bc0 0%,#1a7bc0 100%)}select[multiple] option:checked::before,select[multiple]:focus option:checked::before{content:\'☑️\';font-size:12px;display:inline-block;margin-right:6px;height:100%;line-height:100%;vertical-align:middle}#headerArea,#uhfSkipToMain,.uhf-footer{display:none}#game-stream div[class^=NotFocusedDialog]{position:absolute !important;top:-9999px !important;left:-9999px !important;width:0 !important;height:0 !important}#game-stream video:not([src]){visibility:hidden}.bx-game-tile-wait-time{position:absolute;top:0;left:0;z-index:1;background:rgba(0,0,0,0.5);display:flex;border-radius:4px 0 4px 0;align-items:center;padding:4px 8px}.bx-game-tile-wait-time svg{width:14px;height:16px;margin-right:2px}.bx-game-tile-wait-time span{display:inline-block;height:16px;line-height:16px;font-size:12px;font-weight:bold;margin-left:2px}.bx-game-tile-wait-time[data-duration=short]{background-color:rgba(0,133,133,0.75)}.bx-game-tile-wait-time[data-duration=medium]{background-color:rgba(213,133,0,0.75)}.bx-game-tile-wait-time[data-duration=long]{background-color:rgba(150,0,0,0.75)}.bx-fullscreen-text{position:fixed;top:0;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);z-index:var(--bx-fullscreen-text-z-index);line-height:100vh;color:#fff;text-align:center;font-weight:400;font-family:var(--bx-normal-font);font-size:1.3rem;user-select:none;-webkit-user-select:none}#root section[class*=DeviceCodePage-module__page]{margin-left:20px !important;margin-right:20px !important;margin-top:20px !important;max-width:800px !important}#root div[class*=DeviceCodePage-module__back]{display:none}.bx-blink-me{animation:bx-blinker 1s linear infinite}.bx-horizontal-shaking{animation:bx-horizontal-shaking .4s ease-in-out 2}@-moz-keyframes bx-blinker{100%{opacity:0}}@-webkit-keyframes bx-blinker{100%{opacity:0}}@-o-keyframes bx-blinker{100%{opacity:0}}@keyframes bx-blinker{100%{opacity:0}}@-moz-keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}@-webkit-keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}@-o-keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}@keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}.bx-button{--button-rgb:var(--bx-default-button-rgb);--button-hover-rgb:var(--bx-default-button-hover-rgb);--button-active-rgb:var(--bx-default-button-active-rgb);--button-disabled-rgb:var(--bx-default-button-disabled-rgb);background-color:rgb(var(--button-rgb));user-select:none;-webkit-user-select:none;color:#fff;font-family:var(--bx-title-font-semibold);font-size:14px;border:none;font-weight:400;height:var(--bx-button-height);border-radius:4px;padding:0 8px;text-transform:uppercase;cursor:pointer;overflow:hidden}.bx-button:not([disabled]):active{background-color:rgb(var(--button-active-rgb))}.bx-button:focus{outline:none !important}.bx-button:not([disabled]):not(:active):hover,.bx-button:not([disabled]):not(:active).bx-focusable:focus{background-color:rgb(var(--button-hover-rgb))}.bx-button:disabled{cursor:default;background-color:rgb(var(--button-disabled-rgb));opacity:.5}.bx-button.bx-ghost{background-color:transparent}.bx-button.bx-ghost:not([disabled]):not(:active):hover,.bx-button.bx-ghost:not([disabled]):not(:active).bx-focusable:focus{background-color:rgb(var(--button-hover-rgb))}.bx-button.bx-primary{--button-rgb:var(--bx-primary-button-rgb)}.bx-button.bx-primary:not([disabled]):active{--button-active-rgb:var(--bx-primary-button-active-rgb)}.bx-button.bx-primary:not([disabled]):not(:active):hover,.bx-button.bx-primary:not([disabled]):not(:active).bx-focusable:focus{--button-hover-rgb:var(--bx-primary-button-hover-rgb)}.bx-button.bx-primary:disabled{--button-disabled-rgb:var(--bx-primary-button-disabled-rgb)}.bx-button.bx-warning{--button-rgb:var(--bx-warning-button-rgb)}.bx-button.bx-warning:not([disabled]):active{--button-active-rgb:var(--bx-warning-button-active-rgb)}.bx-button.bx-warning:not([disabled]):not(:active):hover,.bx-button.bx-warning:not([disabled]):not(:active).bx-focusable:focus{--button-hover-rgb:var(--bx-warning-button-hover-rgb)}.bx-button.bx-warning:disabled{--button-disabled-rgb:var(--bx-warning-button-disabled-rgb)}.bx-button.bx-danger{--button-rgb:var(--bx-danger-button-rgb)}.bx-button.bx-danger:not([disabled]):active{--button-active-rgb:var(--bx-danger-button-active-rgb)}.bx-button.bx-danger:not([disabled]):not(:active):hover,.bx-button.bx-danger:not([disabled]):not(:active).bx-focusable:focus{--button-hover-rgb:var(--bx-danger-button-hover-rgb)}.bx-button.bx-danger:disabled{--button-disabled-rgb:var(--bx-danger-button-disabled-rgb)}.bx-button.bx-frosted{--button-alpha:.2;background-color:rgba(var(--button-rgb), var(--button-alpha))}.bx-button.bx-frosted:not([disabled]):not(:active):hover,.bx-button.bx-frosted:not([disabled]):not(:active).bx-focusable:focus{background-color:rgba(var(--button-hover-rgb), var(--button-alpha))}.bx-button.bx-drop-shadow{box-shadow:0 0 4px rgba(0,0,0,0.502)}.bx-button.bx-tall{height:calc(var(--bx-button-height) * 1.5) !important}.bx-button.bx-circular{border-radius:var(--bx-button-height);width:var(--bx-button-height);height:var(--bx-button-height)}.bx-button svg{display:inline-block;width:16px;height:var(--bx-button-height)}.bx-button span{display:inline-block;line-height:var(--bx-button-height);vertical-align:middle;color:#fff;overflow:hidden;white-space:nowrap}.bx-button span:not(:only-child){margin-inline-start:8px}.bx-button.bx-button-multi-lines{height:auto;text-align:left;padding:10px}.bx-button.bx-button-multi-lines span{line-height:unset;display:block}.bx-button.bx-button-multi-lines span:last-of-type{text-transform:none;font-weight:normal;font-family:"Segoe Sans Variable Text";font-size:12px;margin-top:4px}.bx-focusable{position:relative;overflow:visible}.bx-focusable::after{border:2px solid transparent;border-radius:10px}.bx-focusable:focus::after{content:\'\';border-color:#fff;position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px}html[data-active-input=touch] .bx-focusable:focus::after,html[data-active-input=mouse] .bx-focusable:focus::after{border-color:transparent !important}.bx-focusable.bx-circular::after{border-radius:var(--bx-button-height)}a.bx-button{display:inline-block}a.bx-button.bx-full-width{text-align:center}button.bx-inactive{pointer-events:none;opacity:.2;background:transparent !important}.bx-header-remote-play-button{height:auto;margin-right:8px !important}.bx-header-remote-play-button svg{width:24px;height:24px}.bx-header-settings-button{line-height:30px;font-size:14px;text-transform:uppercase;position:relative}.bx-header-settings-button[data-update-available]::before{content:\'🌟\' !important;line-height:var(--bx-button-height);display:inline-block;margin-left:4px}.bx-key-binding-dialog-overlay{position:fixed;inset:0;z-index:var(--bx-key-binding-dialog-overlay-z-index);background:#000;opacity:50%}.bx-key-binding-dialog{display:flex;flex-flow:column;max-height:90vh;position:fixed;top:50%;left:50%;margin-right:-50%;transform:translate(-50%,-50%);min-width:420px;padding:16px;border-radius:8px;z-index:var(--bx-key-binding-dialog-z-index);background:#1a1b1e;color:#fff;font-weight:400;font-size:16px;font-family:var(--bx-normal-font);box-shadow:0 0 6px #000;user-select:none;-webkit-user-select:none}.bx-key-binding-dialog *:focus{outline:none !important}.bx-key-binding-dialog h2{margin-bottom:12px;color:#fff;display:block;font-family:var(--bx-title-font);font-size:32px;font-weight:400;line-height:var(--bx-button-height)}.bx-key-binding-dialog > div{overflow:auto;padding:2px 0}.bx-key-binding-dialog > button{padding:8px 32px;margin:10px auto 0;border:none;border-radius:4px;display:block;background-color:#2d3036;text-align:center;color:#fff;text-transform:uppercase;font-family:var(--bx-title-font);font-weight:400;line-height:18px;font-size:14px}@media (hover:hover){.bx-key-binding-dialog > button:hover{background-color:#515863}}.bx-key-binding-dialog > button:focus{background-color:#515863}.bx-key-binding-dialog ul{margin-bottom:1rem}.bx-key-binding-dialog ul li{display:none}.bx-key-binding-dialog ul[data-flags*="[1]"] > li[data-flag="1"],.bx-key-binding-dialog ul[data-flags*="[2]"] > li[data-flag="2"],.bx-key-binding-dialog ul[data-flags*="[4]"] > li[data-flag="4"],.bx-key-binding-dialog ul[data-flags*="[8]"] > li[data-flag="8"]{display:list-item}@media screen and (max-width:450px){.bx-key-binding-dialog{min-width:100%}}.bx-navigation-dialog{position:absolute;z-index:var(--bx-navigation-dialog-z-index);font-family:var(--bx-title-font)}.bx-navigation-dialog *:focus{outline:none !important}.bx-navigation-dialog select:disabled{-webkit-appearance:none;text-align-last:right;text-align:right;color:#fff;background:#131416;border:none;border-radius:4px;padding:0 5px}.bx-navigation-dialog .bx-focusable::after{border-radius:4px}.bx-navigation-dialog .bx-focusable:focus::after{top:0;left:0;right:0;bottom:0}.bx-navigation-dialog-overlay{position:fixed;background:rgba(11,11,11,0.89);top:0;left:0;right:0;bottom:0;z-index:var(--bx-navigation-dialog-overlay-z-index)}.bx-navigation-dialog-overlay[data-is-playing="true"]{background:transparent}.bx-centered-dialog{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;background:#1a1b1e;border-radius:10px;min-width:min(calc(100vw - 20px), 500px);max-width:calc(100vw - 20px);margin:0 0 0 auto;padding:16px;max-height:95vh;flex-direction:column;overflow:hidden;display:flex;flex-direction:column}.bx-centered-dialog .bx-dialog-title{display:flex;flex-direction:row;align-items:center;margin-bottom:10px}.bx-centered-dialog .bx-dialog-title p{padding:0;margin:0;flex:1;font-size:1.5rem;font-weight:bold}.bx-centered-dialog .bx-dialog-title button{flex-shrink:0}.bx-centered-dialog .bx-dialog-content{flex:1;padding:6px;overflow:auto;overflow-x:hidden}.bx-centered-dialog .bx-dialog-preset-tools{display:flex;margin-bottom:12px;gap:6px}.bx-centered-dialog .bx-dialog-preset-tools button{align-self:center;min-height:50px}.bx-centered-dialog .bx-default-preset-note{font-size:12px;font-style:italic;text-align:center;margin-bottom:10px}.bx-centered-dialog input,.bx-settings-dialog input{accent-color:var(--bx-primary-button-color)}.bx-centered-dialog input:focus,.bx-settings-dialog input:focus{accent-color:var(--bx-danger-button-color)}.bx-centered-dialog select:disabled,.bx-settings-dialog select:disabled{-webkit-appearance:none;background:transparent;text-align-last:right;border:none;color:#fff}.bx-centered-dialog select option:disabled,.bx-settings-dialog select option:disabled{display:none}.bx-centered-dialog input[type=checkbox]:focus,.bx-settings-dialog input[type=checkbox]:focus,.bx-centered-dialog select:focus,.bx-settings-dialog select:focus{filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff)}.bx-centered-dialog a,.bx-settings-dialog a{color:#1c9d1c;text-decoration:none}.bx-centered-dialog a:hover,.bx-settings-dialog a:hover,.bx-centered-dialog a:focus,.bx-settings-dialog a:focus{color:#5dc21e}.bx-centered-dialog label,.bx-settings-dialog label{margin:0}.bx-controller-shortcuts-manager-container .bx-shortcut-note{margin-top:10px;font-size:14px;text-align:center}.bx-controller-shortcuts-manager-container .bx-shortcut-row{display:flex;gap:10px;margin-bottom:10px;align-items:center}.bx-controller-shortcuts-manager-container .bx-shortcut-row label.bx-prompt{flex-shrink:0;font-size:32px;margin:0}.bx-controller-shortcuts-manager-container .bx-shortcut-row label.bx-prompt::first-letter{letter-spacing:6px}.bx-controller-shortcuts-manager-container select:disabled{text-align:left;text-align-last:left}.bx-keyboard-shortcuts-manager-container{display:flex;flex-direction:column;gap:16px}.bx-keyboard-shortcuts-manager-container fieldset{background:#2a2a2a;border:1px solid #2a2a2a;border-radius:4px;padding:4px}.bx-keyboard-shortcuts-manager-container legend{width:auto;padding:4px 8px;margin:0 4px 4px;background:#004f87;box-shadow:0 2px 0 #071e3d;border-radius:4px;font-size:14px;font-weight:bold;text-transform:uppercase}.bx-keyboard-shortcuts-manager-container .bx-settings-row{background:none;padding:10px}.bx-settings-dialog{display:flex;position:fixed;top:0;right:0;bottom:0;opacity:.98;user-select:none;-webkit-user-select:none}.bx-settings-dialog .bx-settings-reload-note{font-size:.8rem;display:block;padding:8px;font-style:italic;font-weight:normal;height:var(--bx-button-height)}.bx-settings-tabs-container{position:fixed;width:48px;max-height:100vh;display:flex;flex-direction:column}.bx-settings-tabs-container > div:last-of-type{display:flex;flex-direction:column;align-items:end}.bx-settings-tabs-container > div:last-of-type button{flex-shrink:0;border-top-right-radius:0;border-bottom-right-radius:0;margin-top:8px;height:unset;padding:8px 10px}.bx-settings-tabs-container > div:last-of-type button svg{width:16px;height:16px}.bx-settings-tabs{display:flex;flex-direction:column;border-radius:0 0 0 8px;box-shadow:0 0 6px #000;overflow:overlay;flex:1}.bx-settings-tabs svg{width:24px;height:24px;padding:10px;flex-shrink:0;box-sizing:content-box;background:#131313;cursor:pointer;border-left:4px solid #1e1e1e}.bx-settings-tabs svg.bx-active{background:#222;border-color:#008746}.bx-settings-tabs svg:not(.bx-active):hover{background:#2f2f2f;border-color:#484848}.bx-settings-tabs svg:focus{border-color:#fff}.bx-settings-tabs svg[data-group=global][data-need-refresh=true]{background:var(--bx-danger-button-color) !important}.bx-settings-tabs svg[data-group=global][data-need-refresh=true]:hover{background:var(--bx-danger-button-hover-color) !important}.bx-settings-tab-contents{flex-direction:column;margin-left:48px;width:450px;background:#1a1b1e;color:#fff;font-weight:400;font-size:16px;font-family:var(--bx-title-font);text-align:center;box-shadow:0 0 6px #000;overflow:overlay;z-index:1}.bx-settings-tab-contents .bx-top-buttons{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}.bx-settings-tab-contents .bx-top-buttons .bx-button{display:block}.bx-settings-tab-contents h2{margin:16px 0 8px 0;display:flex;align-items:center}.bx-settings-tab-contents h2:first-of-type{margin-top:0}.bx-settings-tab-contents h2 span{display:inline-block;font-size:20px;font-weight:bold;text-align:left;flex:1;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;min-height:var(--bx-button-height);align-content:center}@media (max-width:500px){.bx-settings-tab-contents{width:calc(100vw - 48px)}}.bx-settings-row{display:flex;gap:10px;padding:16px 10px;background:#2a2a2a;border-bottom:1px solid #343434}.bx-settings-row:hover,.bx-settings-row:focus-within{background-color:#242424}.bx-settings-row:not(:has(> input[type=checkbox])){flex-wrap:wrap}.bx-settings-row > span.bx-settings-label{font-size:14px;display:block;text-align:left;align-self:center;margin-bottom:0 !important;flex:1}.bx-settings-row > span.bx-settings-label svg{width:20px;height:20px;margin-inline-end:8px}.bx-settings-row > span.bx-settings-label + *{margin:0 0 0 auto}.bx-settings-row[data-multi-lines="true"]{flex-direction:column}.bx-settings-row[data-multi-lines="true"] > span.bx-settings-label{align-self:start}.bx-settings-row[data-multi-lines="true"] > span.bx-settings-label + *{margin:unset}.bx-settings-row.bx-settings-important-row{background:#733b00}.bx-settings-dialog-note{display:block;color:#afafb0;font-size:12px;font-weight:lighter;font-style:italic}.bx-settings-dialog-note:not(:has(a)){margin-top:4px}.bx-settings-dialog-note a{display:inline-block;padding:4px}.bx-settings-custom-user-agent{display:block;width:100%;padding:6px}.bx-donation-link{display:block;text-align:center;text-decoration:none;height:20px;line-height:20px;font-size:14px;margin-top:10px;margin-bottom:10px}.bx-debug-info button{margin-top:10px}.bx-debug-info pre{margin-top:10px;cursor:copy;color:#fff;padding:8px;border:1px solid #2d2d2d;background:#212121;white-space:break-spaces;text-align:left}.bx-debug-info pre:hover{background:#272727}.bx-settings-app-version{margin-top:10px;text-align:center;color:#747474;font-size:12px}.bx-note-unsupported{display:block;font-size:12px;font-style:italic;font-weight:normal;color:#828282}.bx-settings-tab-content{padding:10px}.bx-settings-tab-content > div *:not(.bx-settings-row):has(+ .bx-settings-row) + .bx-settings-row:has(+ .bx-settings-row){border-top-left-radius:6px;border-top-right-radius:6px}.bx-settings-tab-content > div .bx-settings-row:not(:has(+ .bx-settings-row)){border:none;border-bottom-left-radius:6px;border-bottom-right-radius:6px}.bx-settings-tab-content > div *:not(.bx-settings-row):has(+ .bx-settings-row) + .bx-settings-row:not(:has(+ .bx-settings-row)){border:none;border-radius:6px}.bx-settings-tab-content:not([data-game-id="-1"]) .bx-settings-row[data-override=true],.bx-settings-tab-content:not([data-game-id="-1"]) .bx-settings-row:has(*[data-override=true]){border-left:4px solid #ffa500 !important;border-top-left-radius:0 !important;border-bottom-left-radius:0 !important;padding-left:6px !important}.bx-suggest-toggler{text-align:left;display:flex;border-radius:4px;overflow:hidden;background:#003861;height:45px;align-items:center}.bx-suggest-toggler label{flex:1;align-content:center;padding:0 10px;background:#004f87;height:100%}.bx-suggest-toggler span{display:inline-block;align-self:center;padding:10px;width:45px;text-align:center}.bx-suggest-toggler:hover,.bx-suggest-toggler:focus{cursor:pointer;background:#005da1}.bx-suggest-toggler:hover label,.bx-suggest-toggler:focus label{background:#006fbe}.bx-suggest-toggler[bx-open] span{transform:rotate(90deg)}.bx-suggest-toggler[bx-open]+ .bx-suggest-box{display:block}.bx-suggest-box{display:none}.bx-suggest-wrapper{display:flex;flex-direction:column;gap:10px;margin:10px}.bx-suggest-note{font-size:11px;color:#8c8c8c;font-style:italic;font-weight:100}.bx-suggest-link{font-size:14px;display:inline-block;margin-top:4px;padding:4px}.bx-suggest-row{display:flex;flex-direction:row;gap:10px}.bx-suggest-row label{flex:1;overflow:overlay;border-radius:4px}.bx-suggest-row label .bx-suggest-label{background:#323232;padding:4px 10px;font-size:12px;text-align:left}.bx-suggest-row label .bx-suggest-value{padding:6px;font-size:14px}.bx-suggest-row label .bx-suggest-value.bx-suggest-change{background-color:var(--bx-warning-color)}.bx-suggest-row.bx-suggest-ok input{visibility:hidden}.bx-suggest-row.bx-suggest-ok .bx-suggest-label{background-color:#008114}.bx-suggest-row.bx-suggest-ok .bx-suggest-value{background-color:#13a72a}.bx-suggest-row.bx-suggest-change .bx-suggest-label{background-color:#a65e08}.bx-suggest-row.bx-suggest-change .bx-suggest-value{background-color:#d57f18}.bx-suggest-row.bx-suggest-change:hover label{cursor:pointer}.bx-suggest-row.bx-suggest-change:hover .bx-suggest-label{background-color:#995707}.bx-suggest-row.bx-suggest-change:hover .bx-suggest-value{background-color:#bd7115}.bx-suggest-row.bx-suggest-change input:not(:checked) + label{opacity:.5}.bx-suggest-row.bx-suggest-change input:not(:checked) + label .bx-suggest-label{background-color:#2a2a2a}.bx-suggest-row.bx-suggest-change input:not(:checked) + label .bx-suggest-value{background-color:#393939}.bx-suggest-row.bx-suggest-change:hover input:not(:checked) + label{opacity:1}.bx-suggest-row.bx-suggest-change:hover input:not(:checked) + label .bx-suggest-label{background-color:#202020}.bx-suggest-row.bx-suggest-change:hover input:not(:checked) + label .bx-suggest-value{background-color:#303030}.bx-sub-content-box{background:#161616;padding:10px;box-shadow:0 0 12px #0f0f0f inset;border-radius:10px}.bx-settings-row .bx-sub-content-box{background:#202020;padding:12px;box-shadow:0 0 4px #000 inset;border-radius:6px}.bx-controller-extra-settings[data-has-gamepad=true] > :first-child{display:none}.bx-controller-extra-settings[data-has-gamepad=true] > :last-child{display:block}.bx-controller-extra-settings[data-has-gamepad=false] > :first-child{display:block}.bx-controller-extra-settings[data-has-gamepad=false] > :last-child{display:none}.bx-controller-extra-settings .bx-controller-extra-wrapper{flex:1;min-width:1px}.bx-controller-extra-settings .bx-sub-content-box{flex:1;text-align:left;display:flex;flex-direction:column;margin-top:10px}.bx-controller-extra-settings .bx-sub-content-box > label{font-size:14px}.bx-preset-row{display:flex;gap:8px}.bx-preset-row .bx-select{flex:1}.bx-stream-settings-selection{margin-bottom:8px;position:sticky;z-index:1000;top:0}.bx-stream-settings-selection > div{display:flex;gap:8px;background:#222;padding:10px;border-bottom:4px solid #353638;box-shadow:0 0 6px #000;position:relative;z-index:1}.bx-stream-settings-selection > div .bx-select{flex:1}.bx-stream-settings-selection > div .bx-select label{font-weight:bold;font-size:1.1rem;line-height:initial}.bx-stream-settings-selection > div .bx-select label span{line-height:initial}.bx-stream-settings-selection > div .bx-select .bx-select-indicators{display:none}.bx-stream-settings-selection p{font-family:var(--bx-promptfont-font),var(--bx-normal-font);margin:0;font-size:13px;background:rgba(80,80,80,0.949);height:25px;line-height:23px;position:absolute;bottom:-25px;left:0;right:0;text-shadow:0 1px #000}.bx-toast{user-select:none;-webkit-user-select:none;position:fixed;left:50%;top:24px;transform:translate(-50%,0);background:#212121;border-radius:10px;color:#fff;z-index:var(--bx-toast-z-index);font-family:var(--bx-normal-font);border:2px solid #fff;display:flex;align-items:center;opacity:0;overflow:clip;transition:opacity .2s ease-in;box-shadow:0 0 6px #000}.bx-toast.bx-show{opacity:.95}.bx-toast.bx-hide{opacity:0;pointer-events:none}.bx-toast-msg{font-size:14px;display:inline-block;padding:12px 16px;white-space:pre}.bx-toast-status{font-weight:bold;font-size:14px;text-transform:uppercase;display:inline-block;background:#fff;padding:12px 16px;color:#212121;white-space:pre}.bx-wait-time-box{position:fixed;top:0;right:0;background-color:rgba(0,0,0,0.8);color:#fff;z-index:var(--bx-wait-time-box-z-index);padding:12px;border-radius:0 0 0 8px}.bx-wait-time-box label{display:block;text-transform:uppercase;text-align:right;font-size:12px;font-weight:bold;margin:0}.bx-wait-time-box span{display:block;font-family:var(--bx-monospaced-font);text-align:right;font-size:16px;margin-bottom:10px}.bx-wait-time-box span:last-of-type{margin-bottom:0}.bx-remote-play-settings{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #2d2d2d}.bx-remote-play-settings > div{display:flex}.bx-remote-play-settings label{flex:1;font-size:14px}.bx-remote-play-settings label p{margin:4px 0 0;padding:0;color:#888;font-size:12px}.bx-remote-play-resolution{display:block}.bx-remote-play-resolution input[type="radio"]{accent-color:var(--bx-primary-button-color);margin-right:6px}.bx-remote-play-resolution input[type="radio"]:focus{accent-color:var(--bx-primary-button-hover-color)}.bx-remote-play-device-wrapper{display:flex;margin-bottom:12px}.bx-remote-play-device-wrapper:last-child{margin-bottom:2px}.bx-remote-play-device-info{flex:1;align-self:center;padding:4px 0}.bx-remote-play-device-name{font-size:14px;font-weight:bold;display:inline-block;vertical-align:middle}.bx-remote-play-console-type{font-size:8px;background:#004c87;color:#fff;display:inline-block;border-radius:8px;padding:2px 6px;margin-left:8px;vertical-align:middle}.bx-remote-play-power-state{color:#888;font-size:12px}.bx-remote-play-connect-button{min-height:100%;margin:4px 0}.bx-remote-play-buttons{display:flex;justify-content:space-between}select.bx-select{min-height:30px}div.bx-select{display:flex;align-items:stretch;flex:0 1 auto;gap:8px}div.bx-select select:disabled ~ button{display:none}div.bx-select select:disabled ~ div{background:#131416;color:#fff;pointer-events:none}div.bx-select select:disabled ~ div .bx-select-indicators{visibility:hidden}div.bx-select > div,div.bx-select button.bx-select-value{min-width:120px;text-align:left;line-height:24px;vertical-align:middle;background:#fff;color:#000;border-radius:4px;padding:2px 8px;display:flex;flex:1;flex-direction:column}div.bx-select > div{min-height:24px}div.bx-select > div input{display:inline-block;margin-right:8px}div.bx-select > div label{margin-bottom:0;font-size:14px;width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-height:15px}div.bx-select > div label span{display:block;font-size:10px;font-weight:bold;text-align:left;line-height:20px;white-space:pre;min-height:15px;align-content:center}div.bx-select button.bx-select-value{border:none;cursor:pointer;min-height:30px;font-size:.9rem;align-items:center}div.bx-select button.bx-select-value > div{display:flex;width:100%}div.bx-select button.bx-select-value span{flex:1;text-align:left;display:inline-block}div.bx-select button.bx-select-value input{margin:0 4px;accent-color:var(--bx-primary-button-color);pointer-events:none}div.bx-select button.bx-select-value:hover input,div.bx-select button.bx-select-value:focus input{accent-color:var(--bx-danger-button-color)}div.bx-select button.bx-select-value:hover::after,div.bx-select button.bx-select-value:focus::after{border-color:#4d4d4d !important}div.bx-select button.bx-button{border:none;width:24px;height:auto;padding:0;color:#fff;border-radius:4px;font-weight:bold;font-size:12px;font-family:var(--bx-monospaced-font);flex-shrink:0}div.bx-select button.bx-button span{line-height:unset}div.bx-select[data-controller-friendly=true] > div{box-sizing:content-box}div.bx-select[data-controller-friendly=true] select{position:absolute !important;top:-9999px !important;left:-9999px !important;visibility:hidden !important}div.bx-select[data-controller-friendly=false]{position:relative}div.bx-select[data-controller-friendly=false] > div{box-sizing:border-box}div.bx-select[data-controller-friendly=false] > div label{margin-right:24px}div.bx-select[data-controller-friendly=false] select:disabled{display:none}div.bx-select[data-controller-friendly=false] select:not(:disabled){cursor:pointer;position:absolute;top:0;right:0;bottom:0;display:block;opacity:0;z-index:calc(var(--bx-settings-z-index) + 1)}div.bx-select[data-controller-friendly=false] select:not(:disabled):hover + div{background:#f0f0f0}div.bx-select[data-controller-friendly=false] select:not(:disabled) + div label::after{content:\'▾\';font-size:14px;position:absolute;right:8px;pointer-events:none}.bx-select-indicators{display:flex;height:4px;gap:2px;margin-bottom:2px}.bx-select-indicators span{content:\' \';display:inline-block;flex:1;background:#cfcfcf;border-radius:4px;min-width:1px}.bx-select-indicators span[data-highlighted]{background:#9c9c9c;min-width:6px}.bx-select-indicators span[data-selected]{background:#aacfe7}.bx-select-indicators span[data-highlighted][data-selected]{background:#5fa3d0}.bx-guide-home-achievements-progress{display:flex;gap:10px;flex-direction:row}.bx-guide-home-achievements-progress .bx-button{margin-bottom:0 !important}body[data-bx-media-type=tv] .bx-guide-home-achievements-progress{flex-direction:column}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress{flex-direction:row}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress > button:first-of-type{flex:1}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress > button:last-of-type{width:40px}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress > button:last-of-type span{display:none}.bx-guide-home-buttons > div{display:flex;flex-direction:row;gap:12px}body[data-bx-media-type=tv] .bx-guide-home-buttons > div{flex-direction:column}body[data-bx-media-type=tv] .bx-guide-home-buttons > div button{margin-bottom:0 !important}body:not([data-bx-media-type=tv]) .bx-guide-home-buttons > div button span{display:none}.bx-guide-home-buttons[data-is-playing="true"] button[data-state=\'normal\']{display:none}.bx-guide-home-buttons[data-is-playing="false"] button[data-state=\'playing\']{display:none}#game-stream div[class^=StreamMenu-module__menuContainer] > div[class^=Menu-module]{overflow:visible}.bx-stream-menu-button-on{fill:#000 !important;background-color:#2d2d2d !important;color:#000 !important}.bx-stream-refresh-button{top:calc(env(safe-area-inset-top, 0px) + 10px + 50px) !important}body[data-media-type=default] .bx-stream-refresh-button{left:calc(env(safe-area-inset-left, 0px) + 11px) !important}body[data-media-type=tv] .bx-stream-refresh-button{top:calc(var(--gds-focus-borderSize) + 80px) !important}.bx-stream-home-button{top:calc(env(safe-area-inset-top, 0px) + 10px + 50px * 2) !important}body[data-media-type=default] .bx-stream-home-button{left:calc(env(safe-area-inset-left, 0px) + 12px) !important}body[data-media-type=tv] .bx-stream-home-button{top:calc(var(--gds-focus-borderSize) + 80px * 2) !important}div[data-testid=media-container][data-position=center]{display:flex}div[data-testid=media-container][data-position=top] video,div[data-testid=media-container][data-position=top] canvas{top:0}div[data-testid=media-container][data-position=bottom] video,div[data-testid=media-container][data-position=bottom] canvas{bottom:0}#game-stream video{margin:auto;align-self:center;background:#000;position:absolute;left:0;right:0}#game-stream canvas{align-self:center;margin:auto;position:absolute;left:0;right:0}#game-stream.bx-taking-screenshot:before{animation:bx-anim-taking-screenshot .5s ease;content:\' \';position:absolute;width:100%;height:100%;z-index:var(--bx-screenshot-animation-z-index)}#gamepass-dialog-root div[class^=Guide-module__guide] .bx-button{overflow:visible;margin-bottom:12px}@-moz-keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}@-webkit-keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}@-o-keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}@keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}.bx-number-stepper{text-align:center}.bx-number-stepper > div{display:flex;align-items:center}.bx-number-stepper > div span{flex:1;display:inline-block;min-width:40px;font-family:var(--bx-monospaced-font);white-space:pre;font-size:13px;margin:0 4px}.bx-number-stepper > div button{flex-shrink:0;border:none;width:24px;height:24px;margin:0;line-height:24px;background-color:var(--bx-default-button-color);color:#fff;border-radius:4px;font-weight:bold;font-size:14px;font-family:var(--bx-monospaced-font)}@media (hover:hover){.bx-number-stepper > div button:hover{background-color:var(--bx-default-button-hover-color)}}.bx-number-stepper > div button:active{background-color:var(--bx-default-button-hover-color)}.bx-number-stepper > div button:disabled + span{font-family:var(--bx-title-font)}.bx-number-stepper input[type=range]{display:block;margin:8px 0 2px auto;min-width:180px;width:100%;color:#959595 !important}.bx-number-stepper input[type=range]:disabled,.bx-number-stepper button:disabled{display:none}.bx-number-stepper[data-disabled=true] input[type=range],.bx-number-stepper[disabled=true] input[type=range],.bx-number-stepper[data-disabled=true] button,.bx-number-stepper[disabled=true] button{display:none}.bx-dual-number-stepper > span{display:block;font-family:var(--bx-monospaced-font);font-size:13px;white-space:pre;margin:0 4px;text-align:center}.bx-dual-number-stepper > div input[type=range]{display:block;width:100%;min-width:180px;background:transparent;color:#959595 !important;appearance:none;padding:8px 0}.bx-dual-number-stepper > div input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,#fff var(--from),var(--bx-primary-button-color) var(--from) var(--to),#fff var(--to) 100%);height:8px;border-radius:2px}.bx-dual-number-stepper > div input[type=range]::-moz-range-track{background:linear-gradient(90deg,#fff var(--from),var(--bx-primary-button-color) var(--from) var(--to),#fff var(--to) 100%);height:8px;border-radius:2px}.bx-dual-number-stepper > div input[type=range]::-webkit-slider-thumb{margin-top:-4px;appearance:none;width:4px;height:16px;background:#00b85f;border:none;border-radius:2px}.bx-dual-number-stepper > div input[type=range]::-moz-range-thumb{margin-top:-4px;appearance:none;width:4px;height:16px;background:#00b85f;border:none;border-radius:2px}.bx-dual-number-stepper > div input[type=range]:hover::-webkit-slider-runnable-track,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-webkit-slider-runnable-track,.bx-dual-number-stepper > div input[type=range]:focus::-webkit-slider-runnable-track{background:linear-gradient(90deg,#fff var(--from),#006635 var(--from) var(--to),#fff var(--to) 100%)}.bx-dual-number-stepper > div input[type=range]:hover::-moz-range-track,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-moz-range-track,.bx-dual-number-stepper > div input[type=range]:focus::-moz-range-track{background:linear-gradient(90deg,#fff var(--from),#006635 var(--from) var(--to),#fff var(--to) 100%)}.bx-dual-number-stepper > div input[type=range]:hover::-webkit-slider-thumb,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-webkit-slider-thumb,.bx-dual-number-stepper > div input[type=range]:focus::-webkit-slider-thumb{background:#fb3232}.bx-dual-number-stepper > div input[type=range]:hover::-moz-range-thumb,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-moz-range-thumb,.bx-dual-number-stepper > div input[type=range]:focus::-moz-range-thumb{background:#fb3232}.bx-dual-number-stepper[data-disabled=true] input[type=range],.bx-dual-number-stepper[disabled=true] input[type=range]{display:none}#bx-game-bar{z-index:var(--bx-game-bar-z-index);position:fixed;bottom:0;width:40px;height:90px;overflow:visible;cursor:pointer}#bx-game-bar > svg{display:none;pointer-events:none;position:absolute;height:28px;margin-top:16px}@media (hover:hover){#bx-game-bar:hover > svg{display:block}}#bx-game-bar .bx-game-bar-container{opacity:0;position:absolute;display:flex;overflow:hidden;background:rgba(26,27,30,0.91);box-shadow:0 0 6px #1c1c1c;transition:opacity .1s ease-in}#bx-game-bar .bx-game-bar-container.bx-show{opacity:.9}#bx-game-bar .bx-game-bar-container.bx-show + svg{display:none !important}#bx-game-bar .bx-game-bar-container.bx-hide{opacity:0;pointer-events:none}#bx-game-bar .bx-game-bar-container button{width:60px;height:60px;border-radius:0}#bx-game-bar .bx-game-bar-container button svg{width:28px;height:28px;transition:transform .08s ease 0s}#bx-game-bar .bx-game-bar-container button:hover{border-radius:0}#bx-game-bar .bx-game-bar-container button:active svg{transform:scale(.75)}#bx-game-bar .bx-game-bar-container button.bx-activated{background-color:#fff}#bx-game-bar .bx-game-bar-container button.bx-activated svg{filter:invert(1)}#bx-game-bar .bx-game-bar-container div[data-activated] button{display:none}#bx-game-bar .bx-game-bar-container div[data-activated=\'false\'] button:first-of-type{display:block}#bx-game-bar .bx-game-bar-container div[data-activated=\'true\'] button:last-of-type{display:block}#bx-game-bar[data-position="bottom-left"]{left:0;direction:ltr}#bx-game-bar[data-position="bottom-left"] .bx-game-bar-container{border-radius:0 10px 10px 0}#bx-game-bar[data-position="bottom-right"]{right:0;direction:rtl}#bx-game-bar[data-position="bottom-right"] .bx-game-bar-container{direction:ltr;border-radius:10px 0 0 10px}.bx-badges{margin-left:0;user-select:none;-webkit-user-select:none}.bx-badge{border:none;display:inline-block;line-height:24px;color:#fff;font-family:var(--bx-title-font-semibold);font-size:14px;font-weight:400;margin:0 8px 8px 0;box-shadow:0 0 6px #000;border-radius:4px}.bx-badge-name{background-color:#2d3036;border-radius:4px 0 0 4px}.bx-badge-name svg{width:16px;height:16px}.bx-badge-value{background-color:#808080;border-radius:0 4px 4px 0}.bx-badge-name,.bx-badge-value{display:inline-block;padding:0 8px;line-height:30px;vertical-align:bottom}.bx-badge-battery[data-charging=true] span:first-of-type::after{content:\' ⚡️\'}div[class^=StreamMenu-module__container] .bx-badges{position:absolute;max-width:500px}#gamepass-dialog-root .bx-badges{position:fixed;top:60px;left:460px;max-width:500px}@media (min-width:568px) and (max-height:480px){#gamepass-dialog-root .bx-badges{position:unset;top:unset;left:unset;margin:8px 0}}.bx-stats-bar{display:flex;flex-direction:row;gap:8px;user-select:none;-webkit-user-select:none;position:fixed;top:0;background-color:#000;color:#fff;font-family:var(--bx-monospaced-font);font-size:.9rem;padding-left:8px;z-index:var(--bx-stats-bar-z-index);text-wrap:nowrap}.bx-stats-bar[data-stats*="[time]"] > .bx-stat-time,.bx-stats-bar[data-stats*="[play]"] > .bx-stat-play,.bx-stats-bar[data-stats*="[batt]"] > .bx-stat-batt,.bx-stats-bar[data-stats*="[fps]"] > .bx-stat-fps,.bx-stats-bar[data-stats*="[ping]"] > .bx-stat-ping,.bx-stats-bar[data-stats*="[jit]"] > .bx-stat-jit,.bx-stats-bar[data-stats*="[btr]"] > .bx-stat-btr,.bx-stats-bar[data-stats*="[dt]"] > .bx-stat-dt,.bx-stats-bar[data-stats*="[pl]"] > .bx-stat-pl,.bx-stats-bar[data-stats*="[fl]"] > .bx-stat-fl,.bx-stats-bar[data-stats*="[dl]"] > .bx-stat-dl,.bx-stats-bar[data-stats*="[ul]"] > .bx-stat-ul{display:inline-flex;align-items:baseline}.bx-stats-bar[data-stats$="[time]"] > .bx-stat-time,.bx-stats-bar[data-stats$="[play]"] > .bx-stat-play,.bx-stats-bar[data-stats$="[batt]"] > .bx-stat-batt,.bx-stats-bar[data-stats$="[fps]"] > .bx-stat-fps,.bx-stats-bar[data-stats$="[ping]"] > .bx-stat-ping,.bx-stats-bar[data-stats$="[jit]"] > .bx-stat-jit,.bx-stats-bar[data-stats$="[btr]"] > .bx-stat-btr,.bx-stats-bar[data-stats$="[dt]"] > .bx-stat-dt,.bx-stats-bar[data-stats$="[pl]"] > .bx-stat-pl,.bx-stats-bar[data-stats$="[fl]"] > .bx-stat-fl,.bx-stats-bar[data-stats$="[dl]"] > .bx-stat-dl,.bx-stats-bar[data-stats$="[ul]"] > .bx-stat-ul{border-right:none}.bx-stats-bar::before{display:none;content:\'👀\';vertical-align:middle;margin-right:8px}.bx-stats-bar[data-display=glancing]::before{display:inline-block}.bx-stats-bar[data-position=top-left]{left:0;border-radius:0 0 4px 0}.bx-stats-bar[data-position=top-right]{right:0;border-radius:0 0 0 4px}.bx-stats-bar[data-position=top-center]{transform:translate(-50%,0);left:50%;border-radius:0 0 4px 4px}.bx-stats-bar[data-shadow=true]{background:none;filter:drop-shadow(1px 0 0 rgba(0,0,0,0.941)) drop-shadow(-1px 0 0 rgba(0,0,0,0.941)) drop-shadow(0 1px 0 rgba(0,0,0,0.941)) drop-shadow(0 -1px 0 rgba(0,0,0,0.941))}.bx-stats-bar > div{display:none;border-right:1px solid #fff;padding-right:8px}.bx-stats-bar label{margin:0 8px 0 0;font-family:var(--bx-title-font);font-size:70%;font-weight:bold;vertical-align:middle;cursor:help}.bx-stats-bar span{display:inline-block;text-align:right;vertical-align:middle;white-space:pre}.bx-stats-bar span[data-grade=good]{color:#6bffff}.bx-stats-bar span[data-grade=ok]{color:#fff16b}.bx-stats-bar span[data-grade=bad]{color:#ff5f5f}.bx-mkb-settings{display:flex;flex-direction:column;flex:1;padding-bottom:10px;overflow:hidden}.bx-mkb-pointer-lock-msg{user-select:none;-webkit-user-select:none;position:fixed;left:50%;bottom:40px;transform:translateX(-50%);margin:auto;background:#151515;z-index:var(--bx-mkb-pointer-lock-msg-z-index);color:#fff;font-weight:400;font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:1.3rem;padding:12px;border-radius:8px;align-items:center;box-shadow:0 0 6px #000;min-width:300px;opacity:.9;display:flex;flex-direction:column;gap:10px}.bx-mkb-pointer-lock-msg:hover{opacity:1}.bx-mkb-pointer-lock-msg > p{margin:0;width:100%;font-size:22px;margin-bottom:4px;font-weight:bold;text-align:left}.bx-mkb-pointer-lock-msg > div{width:100%;display:flex;flex-direction:row;gap:10px}.bx-mkb-pointer-lock-msg > div button:first-of-type{flex-shrink:1}.bx-mkb-pointer-lock-msg > div button:last-of-type{flex-grow:1}.bx-mkb-key-row{display:flex;margin-bottom:10px;align-items:center;gap:20px}.bx-mkb-key-row label{margin-bottom:0;font-family:var(--bx-promptfont-font);font-size:32px;text-align:center}.bx-mkb-settings.bx-editing .bx-mkb-key-row button{background:#393939;border-radius:4px;border:none}.bx-mkb-settings.bx-editing .bx-mkb-key-row button:hover{background:#333;cursor:pointer}.bx-mkb-action-buttons > div{text-align:right;display:none}.bx-mkb-action-buttons button{margin-left:8px}.bx-mkb-settings:not(.bx-editing) .bx-mkb-action-buttons > div:first-child{display:block}.bx-mkb-settings.bx-editing .bx-mkb-action-buttons > div:last-child{display:block}.bx-mkb-note{display:block;margin:0 0 10px;font-size:12px;text-align:center}button.bx-binding-button{flex:1;min-height:38px;border:none;border-radius:4px;font-size:14px;color:#fff;display:flex;align-items:center;align-self:center;padding:0 6px}button.bx-binding-button:disabled{background:#131416;padding:0 8px}button.bx-binding-button:not(:disabled){border:2px solid transparent;border-top:none;border-bottom:4px solid #252525;background:#3b3b3b;cursor:pointer}button.bx-binding-button:not(:disabled):hover,button.bx-binding-button:not(:disabled).bx-focusable:focus{background:#20b217;border-bottom-color:#186c13}button.bx-binding-button:not(:disabled):active{background:#16900f;border-bottom:3px solid #0c4e08;border-left-width:2px;border-right-width:2px}button.bx-binding-button:not(:disabled).bx-focusable:focus::after{top:-6px;left:-8px;right:-8px;bottom:-10px}.bx-settings-row .bx-binding-button-wrapper button.bx-binding-button{min-width:60px}.bx-controller-customizations-container .bx-btn-detect{display:block;margin-bottom:20px}.bx-controller-customizations-container .bx-btn-detect.bx-monospaced{background:none;font-weight:bold;font-size:12px}.bx-controller-customizations-container .bx-buttons-grid{display:grid;grid-template-columns:auto auto;column-gap:20px;row-gap:10px;margin-bottom:20px}.bx-controller-key-row{display:flex;align-items:stretch}.bx-controller-key-row > label{margin-bottom:0;font-family:var(--bx-promptfont-font);font-size:32px;text-align:center;min-width:50px;flex-shrink:0;display:flex;align-self:center}.bx-controller-key-row > label::after{content:\'❯\';margin:0 12px;font-size:16px;align-self:center}.bx-controller-key-row .bx-select{width:100% !important}.bx-controller-key-row .bx-select > div{min-width:50px}.bx-controller-key-row .bx-select label{font-family:var(--bx-promptfont-font),var(--bx-normal-font);font-size:32px;text-align:center;margin-bottom:6px;height:40px;line-height:40px}.bx-controller-key-row:hover > label{color:#ffe64b}.bx-controller-key-row:hover > label::after{color:#fff}.bx-controller-customization-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.bx-controller-customization-summary span{font-family:var(--bx-promptfont);font-size:24px;border-radius:6px;background:#131313;color:#fff;display:inline-block;padding:2px;text-align:center}.bx-product-details-icons{padding:8px;border-radius:4px}.bx-product-details-icons svg{margin-right:8px}.bx-product-details-buttons{display:flex;gap:10px;flex-direction:row}.bx-product-details-buttons button{max-width:max-content;margin:10px 0 0 0;display:flex}@media (min-width:568px) and (max-height:480px){.bx-product-details-buttons{flex-direction:column}.bx-product-details-buttons button{margin:8px 0 0 10px}}',
+    let css = ':root{--bx-title-font:Bahnschrift,Arial,Helvetica,sans-serif;--bx-title-font-semibold:Bahnschrift Semibold,Arial,Helvetica,sans-serif;--bx-normal-font:"Segoe UI",Arial,Helvetica,sans-serif;--bx-monospaced-font:Consolas,"Courier New",Courier,monospace;--bx-promptfont-font:promptfont;--bx-button-height:40px;--bx-default-button-color:#2d3036;--bx-default-button-rgb:45,48,54;--bx-default-button-hover-color:#515863;--bx-default-button-hover-rgb:81,88,99;--bx-default-button-active-color:#222428;--bx-default-button-active-rgb:34,36,40;--bx-default-button-disabled-color:#8e8e8e;--bx-default-button-disabled-rgb:142,142,142;--bx-primary-button-color:#008746;--bx-primary-button-rgb:0,135,70;--bx-primary-button-hover-color:#04b358;--bx-primary-button-hover-rgb:4,179,88;--bx-primary-button-active-color:#044e2a;--bx-primary-button-active-rgb:4,78,42;--bx-primary-button-disabled-color:#448262;--bx-primary-button-disabled-rgb:68,130,98;--bx-warning-button-color:#c16e04;--bx-warning-button-rgb:193,110,4;--bx-warning-button-hover-color:#fa9005;--bx-warning-button-hover-rgb:250,144,5;--bx-warning-button-active-color:#965603;--bx-warning-button-active-rgb:150,86,3;--bx-warning-button-disabled-color:#a2816c;--bx-warning-button-disabled-rgb:162,129,108;--bx-danger-button-color:#c10404;--bx-danger-button-rgb:193,4,4;--bx-danger-button-hover-color:#e61d1d;--bx-danger-button-hover-rgb:230,29,29;--bx-danger-button-active-color:#a26c6c;--bx-danger-button-active-rgb:162,108,108;--bx-danger-button-disabled-color:#bd8282;--bx-danger-button-disabled-rgb:189,130,130;--bx-fullscreen-text-z-index:9999;--bx-toast-z-index:6000;--bx-key-binding-dialog-z-index:5010;--bx-key-binding-dialog-overlay-z-index:5000;--bx-stats-bar-z-index:4010;--bx-navigation-dialog-z-index:3010;--bx-navigation-dialog-overlay-z-index:3000;--bx-mkb-pointer-lock-msg-z-index:2000;--bx-game-bar-z-index:1000;--bx-screenshot-animation-z-index:200;--bx-wait-time-box-z-index:100}@font-face{font-family:\'promptfont\';src:url("https://redphx.github.io/better-xcloud/fonts/promptfont.otf");unicode-range:U+2196-E011,U+27F6,U+FF31}#StreamHud div[class^=HUDButton-module__hiddenContainer] ~ div:not([class^=HUDButton-module__hiddenContainer]){opacity:0;pointer-events:none !important;position:absolute;top:-9999px;left:-9999px}@media screen and (min-width:641px) and (max-width:767px){header button[class^="ExperienceDropdown-module__toggleButton"],header button[class^="XboxButton-module__headerXboxButton"]{margin-right:10px !important}header a[href="/play"] > div > div,header button[class^="ExperienceDropdown-module__toggleButton"] > div > div{font-size:12px}header a[href="/play"] > div > svg,header button[class^="ExperienceDropdown-module__toggleButton"] > div > svg{width:20px;height:20px}}@media screen and (max-width:640px){header a[href="/play"],header button[class^="ExperienceDropdown-module__toggleButton"]{display:none}}.bx-full-width{width:100% !important}.bx-full-height{height:100% !important}.bx-auto-height{height:auto !important}.bx-no-scroll{overflow:hidden !important}.bx-hide-scroll-bar{scrollbar-width:none}.bx-hide-scroll-bar::-webkit-scrollbar{display:none}.bx-gone{display:none !important}.bx-offscreen{position:absolute !important;top:-9999px !important;left:-9999px !important;visibility:hidden !important}.bx-hidden{visibility:hidden !important}.bx-invisible{opacity:0}.bx-unclickable{pointer-events:none}.bx-pixel{width:1px !important;height:1px !important}.bx-no-margin{margin:0 !important}.bx-no-padding{padding:0 !important}.bx-prompt{font-family:var(--bx-promptfont-font) !important}.bx-monospaced{font-family:var(--bx-monospaced-font) !important}.bx-line-through{text-decoration:line-through !important}.bx-normal-case{text-transform:none !important}.bx-normal-link{text-transform:none !important;text-align:left !important;font-weight:400 !important;font-family:var(--bx-normal-font) !important}.bx-frosted{backdrop-filter:blur(4px) brightness(1.5)}select[multiple],select[multiple]:focus{overflow:auto;border:none}select[multiple] option,select[multiple]:focus option{padding:4px 6px}select[multiple] option:checked,select[multiple]:focus option:checked{background:#1a7bc0 linear-gradient(0deg,#1a7bc0 0%,#1a7bc0 100%)}select[multiple] option:checked::before,select[multiple]:focus option:checked::before{content:\'☑️\';font-size:12px;display:inline-block;margin-right:6px;height:100%;line-height:100%;vertical-align:middle}#headerArea,#uhfSkipToMain,.uhf-footer{display:none}#game-stream div[class^=NotFocusedDialog]{position:absolute !important;top:-9999px !important;left:-9999px !important;width:0 !important;height:0 !important}#game-stream video:not([src]){visibility:hidden}.bx-game-tile-wait-time{position:absolute;top:0;left:0;z-index:1;background:rgba(0,0,0,0.5);display:flex;border-radius:4px 0 4px 0;align-items:center;padding:4px 8px}.bx-game-tile-wait-time svg{width:14px;height:16px;margin-right:2px}.bx-game-tile-wait-time span{display:inline-block;height:16px;line-height:16px;font-size:12px;font-weight:bold;margin-left:2px}.bx-game-tile-wait-time[data-duration=short]{background-color:rgba(0,133,133,0.75)}.bx-game-tile-wait-time[data-duration=medium]{background-color:rgba(213,133,0,0.75)}.bx-game-tile-wait-time[data-duration=long]{background-color:rgba(150,0,0,0.75)}.bx-fullscreen-text{position:fixed;top:0;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);z-index:var(--bx-fullscreen-text-z-index);line-height:100vh;color:#fff;text-align:center;font-weight:400;font-family:var(--bx-normal-font);font-size:1.3rem;user-select:none;-webkit-user-select:none}#root section[class*=DeviceCodePage-module__page]{margin-left:20px !important;margin-right:20px !important;margin-top:20px !important;max-width:800px !important}#root div[class*=DeviceCodePage-module__back]{display:none}.bx-blink-me{animation:bx-blinker 1s linear infinite}.bx-horizontal-shaking{animation:bx-horizontal-shaking .4s ease-in-out 2}@-moz-keyframes bx-blinker{100%{opacity:0}}@-webkit-keyframes bx-blinker{100%{opacity:0}}@-o-keyframes bx-blinker{100%{opacity:0}}@keyframes bx-blinker{100%{opacity:0}}@-moz-keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}@-webkit-keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}@-o-keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}@keyframes bx-horizontal-shaking{0%{transform:translateX(0)}25%{transform:translateX(5px)}50%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}.bx-button{--button-rgb:var(--bx-default-button-rgb);--button-hover-rgb:var(--bx-default-button-hover-rgb);--button-active-rgb:var(--bx-default-button-active-rgb);--button-disabled-rgb:var(--bx-default-button-disabled-rgb);background-color:rgb(var(--button-rgb));user-select:none;-webkit-user-select:none;color:#fff;font-family:var(--bx-title-font-semibold);font-size:14px;border:none;font-weight:400;height:var(--bx-button-height);border-radius:4px;padding:0 8px;text-transform:uppercase;cursor:pointer;overflow:hidden}.bx-button:not([disabled]):active{background-color:rgb(var(--button-active-rgb))}.bx-button:focus{outline:none !important}.bx-button:not([disabled]):not(:active):hover,.bx-button:not([disabled]):not(:active).bx-focusable:focus{background-color:rgb(var(--button-hover-rgb))}.bx-button:disabled{cursor:default;background-color:rgb(var(--button-disabled-rgb));opacity:.5}.bx-button.bx-ghost{background-color:transparent}.bx-button.bx-ghost:not([disabled]):not(:active):hover,.bx-button.bx-ghost:not([disabled]):not(:active).bx-focusable:focus{background-color:rgb(var(--button-hover-rgb))}.bx-button.bx-primary{--button-rgb:var(--bx-primary-button-rgb)}.bx-button.bx-primary:not([disabled]):active{--button-active-rgb:var(--bx-primary-button-active-rgb)}.bx-button.bx-primary:not([disabled]):not(:active):hover,.bx-button.bx-primary:not([disabled]):not(:active).bx-focusable:focus{--button-hover-rgb:var(--bx-primary-button-hover-rgb)}.bx-button.bx-primary:disabled{--button-disabled-rgb:var(--bx-primary-button-disabled-rgb)}.bx-button.bx-warning{--button-rgb:var(--bx-warning-button-rgb)}.bx-button.bx-warning:not([disabled]):active{--button-active-rgb:var(--bx-warning-button-active-rgb)}.bx-button.bx-warning:not([disabled]):not(:active):hover,.bx-button.bx-warning:not([disabled]):not(:active).bx-focusable:focus{--button-hover-rgb:var(--bx-warning-button-hover-rgb)}.bx-button.bx-warning:disabled{--button-disabled-rgb:var(--bx-warning-button-disabled-rgb)}.bx-button.bx-danger{--button-rgb:var(--bx-danger-button-rgb)}.bx-button.bx-danger:not([disabled]):active{--button-active-rgb:var(--bx-danger-button-active-rgb)}.bx-button.bx-danger:not([disabled]):not(:active):hover,.bx-button.bx-danger:not([disabled]):not(:active).bx-focusable:focus{--button-hover-rgb:var(--bx-danger-button-hover-rgb)}.bx-button.bx-danger:disabled{--button-disabled-rgb:var(--bx-danger-button-disabled-rgb)}.bx-button.bx-frosted{--button-alpha:.2;background-color:rgba(var(--button-rgb), var(--button-alpha))}.bx-button.bx-frosted:not([disabled]):not(:active):hover,.bx-button.bx-frosted:not([disabled]):not(:active).bx-focusable:focus{background-color:rgba(var(--button-hover-rgb), var(--button-alpha))}.bx-button.bx-drop-shadow{box-shadow:0 0 4px rgba(0,0,0,0.502)}.bx-button.bx-tall{height:calc(var(--bx-button-height) * 1.5) !important}.bx-button.bx-circular{border-radius:var(--bx-button-height);width:var(--bx-button-height);height:var(--bx-button-height)}.bx-button svg{display:inline-block;width:16px;height:var(--bx-button-height)}.bx-button span{display:inline-block;line-height:var(--bx-button-height);vertical-align:middle;color:#fff;overflow:hidden;white-space:nowrap}.bx-button span:not(:only-child){margin-inline-start:8px}.bx-button.bx-button-multi-lines{height:auto;text-align:left;padding:10px}.bx-button.bx-button-multi-lines span{line-height:unset;display:block}.bx-button.bx-button-multi-lines span:last-of-type{text-transform:none;font-weight:normal;font-family:"Segoe Sans Variable Text";font-size:12px;margin-top:4px}.bx-focusable{position:relative;overflow:visible}.bx-focusable::after{border:2px solid transparent;border-radius:10px}.bx-focusable:focus::after{content:\'\';border-color:#fff;position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px}html[data-active-input=touch] .bx-focusable:focus::after,html[data-active-input=mouse] .bx-focusable:focus::after{border-color:transparent !important}.bx-focusable.bx-circular::after{border-radius:var(--bx-button-height)}a.bx-button{display:inline-block}a.bx-button.bx-full-width{text-align:center}button.bx-inactive{pointer-events:none;opacity:.2;background:transparent !important}.bx-header-remote-play-button{height:auto;margin-right:8px !important}.bx-header-remote-play-button svg{width:24px;height:24px}.bx-header-settings-button{line-height:30px;font-size:14px;text-transform:uppercase;position:relative}.bx-header-settings-button[data-update-available]::before{content:\'🌟\' !important;line-height:var(--bx-button-height);display:inline-block;margin-left:4px}.bx-key-binding-dialog-overlay{position:fixed;inset:0;z-index:var(--bx-key-binding-dialog-overlay-z-index);background:#000;opacity:50%}.bx-key-binding-dialog{display:flex;flex-flow:column;max-height:90vh;position:fixed;top:50%;left:50%;margin-right:-50%;transform:translate(-50%,-50%);min-width:420px;padding:16px;border-radius:8px;z-index:var(--bx-key-binding-dialog-z-index);background:#1a1b1e;color:#fff;font-weight:400;font-size:16px;font-family:var(--bx-normal-font);box-shadow:0 0 6px #000;user-select:none;-webkit-user-select:none}.bx-key-binding-dialog *:focus{outline:none !important}.bx-key-binding-dialog h2{margin-bottom:12px;color:#fff;display:block;font-family:var(--bx-title-font);font-size:32px;font-weight:400;line-height:var(--bx-button-height)}.bx-key-binding-dialog > div{overflow:auto;padding:2px 0}.bx-key-binding-dialog > button{padding:8px 32px;margin:10px auto 0;border:none;border-radius:4px;display:block;background-color:#2d3036;text-align:center;color:#fff;text-transform:uppercase;font-family:var(--bx-title-font);font-weight:400;line-height:18px;font-size:14px}@media (hover:hover){.bx-key-binding-dialog > button:hover{background-color:#515863}}.bx-key-binding-dialog > button:focus{background-color:#515863}.bx-key-binding-dialog ul{margin-bottom:1rem}.bx-key-binding-dialog ul li{display:none}.bx-key-binding-dialog ul[data-flags*="[1]"] > li[data-flag="1"],.bx-key-binding-dialog ul[data-flags*="[2]"] > li[data-flag="2"],.bx-key-binding-dialog ul[data-flags*="[4]"] > li[data-flag="4"],.bx-key-binding-dialog ul[data-flags*="[8]"] > li[data-flag="8"]{display:list-item}@media screen and (max-width:450px){.bx-key-binding-dialog{min-width:100%}}.bx-navigation-dialog{position:absolute;z-index:var(--bx-navigation-dialog-z-index);font-family:var(--bx-title-font)}.bx-navigation-dialog *:focus{outline:none !important}.bx-navigation-dialog select:disabled{-webkit-appearance:none;text-align-last:right;text-align:right;color:#fff;background:#131416;border:none;border-radius:4px;padding:0 5px}.bx-navigation-dialog .bx-focusable::after{border-radius:4px}.bx-navigation-dialog .bx-focusable:focus::after{top:0;left:0;right:0;bottom:0}.bx-navigation-dialog-overlay{position:fixed;background:rgba(11,11,11,0.89);top:0;left:0;right:0;bottom:0;z-index:var(--bx-navigation-dialog-overlay-z-index)}.bx-navigation-dialog-overlay[data-is-playing="true"]{background:transparent}.bx-centered-dialog{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;background:#1a1b1e;border-radius:10px;min-width:min(calc(100vw - 20px), 500px);max-width:calc(100vw - 20px);margin:0 0 0 auto;padding:16px;max-height:95vh;flex-direction:column;overflow:hidden;display:flex;flex-direction:column}.bx-centered-dialog .bx-dialog-title{display:flex;flex-direction:row;align-items:center;margin-bottom:10px}.bx-centered-dialog .bx-dialog-title p{padding:0;margin:0;flex:1;font-size:1.5rem;font-weight:bold}.bx-centered-dialog .bx-dialog-title button{flex-shrink:0}.bx-centered-dialog .bx-dialog-content{flex:1;padding:6px;overflow:auto;overflow-x:hidden}.bx-centered-dialog .bx-dialog-preset-tools{display:flex;margin-bottom:12px;gap:6px}.bx-centered-dialog .bx-dialog-preset-tools button{align-self:center;min-height:50px}.bx-centered-dialog .bx-default-preset-note{font-size:12px;font-style:italic;text-align:center;margin-bottom:10px}.bx-centered-dialog input,.bx-settings-dialog input{accent-color:var(--bx-primary-button-color)}.bx-centered-dialog input:focus,.bx-settings-dialog input:focus{accent-color:var(--bx-danger-button-color)}.bx-centered-dialog select:disabled,.bx-settings-dialog select:disabled{-webkit-appearance:none;background:transparent;text-align-last:right;border:none;color:#fff}.bx-centered-dialog select option:disabled,.bx-settings-dialog select option:disabled{display:none}.bx-centered-dialog input[type=checkbox]:focus,.bx-settings-dialog input[type=checkbox]:focus,.bx-centered-dialog select:focus,.bx-settings-dialog select:focus{filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff)}.bx-centered-dialog a,.bx-settings-dialog a{color:#1c9d1c;text-decoration:none}.bx-centered-dialog a:hover,.bx-settings-dialog a:hover,.bx-centered-dialog a:focus,.bx-settings-dialog a:focus{color:#5dc21e}.bx-centered-dialog label,.bx-settings-dialog label{margin:0}.bx-controller-shortcuts-manager-container .bx-shortcut-note{margin-top:10px;font-size:14px;text-align:center}.bx-controller-shortcuts-manager-container .bx-shortcut-row{display:flex;gap:10px;margin-bottom:10px;align-items:center}.bx-controller-shortcuts-manager-container .bx-shortcut-row label.bx-prompt{flex-shrink:0;font-size:32px;margin:0}.bx-controller-shortcuts-manager-container .bx-shortcut-row label.bx-prompt::first-letter{letter-spacing:6px}.bx-controller-shortcuts-manager-container select:disabled{text-align:left;text-align-last:left}.bx-keyboard-shortcuts-manager-container{display:flex;flex-direction:column;gap:16px}.bx-keyboard-shortcuts-manager-container fieldset{background:#2a2a2a;border:1px solid #2a2a2a;border-radius:4px;padding:4px}.bx-keyboard-shortcuts-manager-container legend{width:auto;padding:4px 8px;margin:0 4px 4px;background:#004f87;box-shadow:0 2px 0 #071e3d;border-radius:4px;font-size:14px;font-weight:bold;text-transform:uppercase}.bx-keyboard-shortcuts-manager-container .bx-settings-row{background:none;padding:10px}.bx-settings-dialog{display:flex;position:fixed;top:0;right:0;bottom:0;opacity:.98;user-select:none;-webkit-user-select:none}.bx-settings-dialog .bx-settings-reload-note{font-size:.8rem;display:block;padding:8px;font-style:italic;font-weight:normal;height:var(--bx-button-height)}.bx-settings-tabs-container{position:fixed;width:48px;max-height:100vh;display:flex;flex-direction:column}.bx-settings-tabs-container > div:last-of-type{display:flex;flex-direction:column;align-items:end}.bx-settings-tabs-container > div:last-of-type button{flex-shrink:0;border-top-right-radius:0;border-bottom-right-radius:0;margin-top:8px;height:unset;padding:8px 10px}.bx-settings-tabs-container > div:last-of-type button svg{width:16px;height:16px}.bx-settings-tabs{display:flex;flex-direction:column;border-radius:0 0 0 8px;box-shadow:0 0 6px #000;overflow:overlay;flex:1}.bx-settings-tabs svg{width:24px;height:24px;padding:10px;flex-shrink:0;box-sizing:content-box;background:#131313;cursor:pointer;border-left:4px solid #1e1e1e}.bx-settings-tabs svg.bx-active{background:#222;border-color:#008746}.bx-settings-tabs svg:not(.bx-active):hover{background:#2f2f2f;border-color:#484848}.bx-settings-tabs svg:focus{border-color:#fff}.bx-settings-tabs svg[data-group=global][data-need-refresh=true]{background:var(--bx-danger-button-color) !important}.bx-settings-tabs svg[data-group=global][data-need-refresh=true]:hover{background:var(--bx-danger-button-hover-color) !important}.bx-settings-tab-contents{flex-direction:column;margin-left:48px;width:450px;background:#1a1b1e;color:#fff;font-weight:400;font-size:16px;font-family:var(--bx-title-font);text-align:center;box-shadow:0 0 6px #000;overflow:overlay;z-index:1}.bx-settings-tab-contents .bx-top-buttons{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}.bx-settings-tab-contents .bx-top-buttons .bx-button{display:block}.bx-settings-tab-contents h2{margin:16px 0 8px 0;display:flex;align-items:center}.bx-settings-tab-contents h2:first-of-type{margin-top:0}.bx-settings-tab-contents h2 span{display:inline-block;font-size:20px;font-weight:bold;text-align:left;flex:1;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;min-height:var(--bx-button-height);align-content:center}@media (max-width:500px){.bx-settings-tab-contents{width:calc(100vw - 48px)}}.bx-settings-row{display:flex;gap:10px;padding:16px 10px;background:#2a2a2a;border-bottom:1px solid #343434}.bx-settings-row:hover,.bx-settings-row:focus-within{background-color:#242424}.bx-settings-row:not(:has(> input[type=checkbox])){flex-wrap:wrap}.bx-settings-row > span.bx-settings-label{font-size:14px;display:block;text-align:left;align-self:center;margin-bottom:0 !important;flex:1}.bx-settings-row > span.bx-settings-label svg{width:20px;height:20px;margin-inline-end:8px}.bx-settings-row > span.bx-settings-label + *{margin:0 0 0 auto}.bx-settings-row[data-multi-lines="true"]{flex-direction:column}.bx-settings-row[data-multi-lines="true"] > span.bx-settings-label{align-self:start}.bx-settings-row[data-multi-lines="true"] > span.bx-settings-label + *{margin:unset}.bx-settings-row.bx-settings-important-row{background:#733b00}.bx-settings-dialog-note{display:block;color:#afafb0;font-size:12px;font-weight:lighter;font-style:italic}.bx-settings-dialog-note:not(:has(a)){margin-top:4px}.bx-settings-dialog-note a{display:inline-block;padding:4px}.bx-settings-custom-user-agent{display:block;width:100%;padding:6px}.bx-donation-link{display:block;text-align:center;text-decoration:none;height:20px;line-height:20px;font-size:14px;margin-top:10px;margin-bottom:10px}.bx-debug-info button{margin-top:10px}.bx-debug-info pre{margin-top:10px;cursor:copy;color:#fff;padding:8px;border:1px solid #2d2d2d;background:#212121;white-space:break-spaces;text-align:left}.bx-debug-info pre:hover{background:#272727}.bx-settings-app-version{margin-top:10px;text-align:center;color:#747474;font-size:12px}.bx-note-unsupported{display:block;font-size:12px;font-style:italic;font-weight:normal;color:#828282}.bx-settings-tab-content{padding:10px}.bx-settings-tab-content > div *:not(.bx-settings-row):has(+ .bx-settings-row) + .bx-settings-row:has(+ .bx-settings-row){border-top-left-radius:6px;border-top-right-radius:6px}.bx-settings-tab-content > div .bx-settings-row:not(:has(+ .bx-settings-row)){border:none;border-bottom-left-radius:6px;border-bottom-right-radius:6px}.bx-settings-tab-content > div *:not(.bx-settings-row):has(+ .bx-settings-row) + .bx-settings-row:not(:has(+ .bx-settings-row)){border:none;border-radius:6px}.bx-settings-tab-content:not([data-game-id="-1"]) .bx-settings-row[data-override=true],.bx-settings-tab-content:not([data-game-id="-1"]) .bx-settings-row:has(*[data-override=true]){border-left:4px solid #ffa500 !important;border-top-left-radius:0 !important;border-bottom-left-radius:0 !important;padding-left:6px !important}.bx-suggest-toggler{text-align:left;display:flex;border-radius:4px;overflow:hidden;background:#003861;height:45px;align-items:center}.bx-suggest-toggler label{flex:1;align-content:center;padding:0 10px;background:#004f87;height:100%}.bx-suggest-toggler span{display:inline-block;align-self:center;padding:10px;width:45px;text-align:center}.bx-suggest-toggler:hover,.bx-suggest-toggler:focus{cursor:pointer;background:#005da1}.bx-suggest-toggler:hover label,.bx-suggest-toggler:focus label{background:#006fbe}.bx-suggest-toggler[bx-open] span{transform:rotate(90deg)}.bx-suggest-toggler[bx-open]+ .bx-suggest-box{display:block}.bx-suggest-box{display:none}.bx-suggest-wrapper{display:flex;flex-direction:column;gap:10px;margin:10px}.bx-suggest-note{font-size:11px;color:#8c8c8c;font-style:italic;font-weight:100}.bx-suggest-link{font-size:14px;display:inline-block;margin-top:4px;padding:4px}.bx-suggest-row{display:flex;flex-direction:row;gap:10px}.bx-suggest-row label{flex:1;overflow:overlay;border-radius:4px}.bx-suggest-row label .bx-suggest-label{background:#323232;padding:4px 10px;font-size:12px;text-align:left}.bx-suggest-row label .bx-suggest-value{padding:6px;font-size:14px}.bx-suggest-row label .bx-suggest-value.bx-suggest-change{background-color:var(--bx-warning-color)}.bx-suggest-row.bx-suggest-ok input{visibility:hidden}.bx-suggest-row.bx-suggest-ok .bx-suggest-label{background-color:#008114}.bx-suggest-row.bx-suggest-ok .bx-suggest-value{background-color:#13a72a}.bx-suggest-row.bx-suggest-change .bx-suggest-label{background-color:#a65e08}.bx-suggest-row.bx-suggest-change .bx-suggest-value{background-color:#d57f18}.bx-suggest-row.bx-suggest-change:hover label{cursor:pointer}.bx-suggest-row.bx-suggest-change:hover .bx-suggest-label{background-color:#995707}.bx-suggest-row.bx-suggest-change:hover .bx-suggest-value{background-color:#bd7115}.bx-suggest-row.bx-suggest-change input:not(:checked) + label{opacity:.5}.bx-suggest-row.bx-suggest-change input:not(:checked) + label .bx-suggest-label{background-color:#2a2a2a}.bx-suggest-row.bx-suggest-change input:not(:checked) + label .bx-suggest-value{background-color:#393939}.bx-suggest-row.bx-suggest-change:hover input:not(:checked) + label{opacity:1}.bx-suggest-row.bx-suggest-change:hover input:not(:checked) + label .bx-suggest-label{background-color:#202020}.bx-suggest-row.bx-suggest-change:hover input:not(:checked) + label .bx-suggest-value{background-color:#303030}.bx-sub-content-box{background:#161616;padding:10px;box-shadow:0 0 12px #0f0f0f inset;border-radius:10px}.bx-settings-row .bx-sub-content-box{background:#202020;padding:12px;box-shadow:0 0 4px #000 inset;border-radius:6px}.bx-controller-extra-settings[data-has-gamepad=true] > :first-child{display:none}.bx-controller-extra-settings[data-has-gamepad=true] > :last-child{display:block}.bx-controller-extra-settings[data-has-gamepad=false] > :first-child{display:block}.bx-controller-extra-settings[data-has-gamepad=false] > :last-child{display:none}.bx-controller-extra-settings .bx-controller-extra-wrapper{flex:1;min-width:1px}.bx-controller-extra-settings .bx-sub-content-box{flex:1;text-align:left;display:flex;flex-direction:column;margin-top:10px}.bx-controller-extra-settings .bx-sub-content-box > label{font-size:14px}.bx-preset-row{display:flex;gap:8px}.bx-preset-row .bx-select{flex:1}.bx-stream-settings-selection{margin-bottom:8px;position:sticky;z-index:1000;top:0}.bx-stream-settings-selection > div{display:flex;gap:8px;background:#222;padding:10px;border-bottom:4px solid #353638;box-shadow:0 0 6px #000;position:relative;z-index:1}.bx-stream-settings-selection > div .bx-select{flex:1}.bx-stream-settings-selection > div .bx-select label{font-weight:bold;font-size:1.1rem;line-height:initial}.bx-stream-settings-selection > div .bx-select label span{line-height:initial}.bx-stream-settings-selection > div .bx-select .bx-select-indicators{display:none}.bx-stream-settings-selection p{font-family:var(--bx-promptfont-font),var(--bx-normal-font);margin:0;font-size:13px;background:rgba(80,80,80,0.949);height:25px;line-height:23px;position:absolute;bottom:-25px;left:0;right:0;text-shadow:0 1px #000}.bx-toast{user-select:none;-webkit-user-select:none;position:fixed;left:50%;top:24px;transform:translate(-50%,0);background:#212121;border-radius:10px;color:#fff;z-index:var(--bx-toast-z-index);font-family:var(--bx-normal-font);border:2px solid #fff;display:flex;align-items:center;opacity:0;overflow:clip;transition:opacity .2s ease-in;box-shadow:0 0 6px #000}.bx-toast.bx-show{opacity:.95}.bx-toast.bx-hide{opacity:0;pointer-events:none}.bx-toast-msg{font-size:14px;display:inline-block;padding:12px 16px;white-space:pre}.bx-toast-status{font-weight:bold;font-size:14px;text-transform:uppercase;display:inline-block;background:#fff;padding:12px 16px;color:#212121;white-space:pre}.bx-wait-time-box{position:fixed;top:0;right:0;background-color:rgba(0,0,0,0.8);color:#fff;z-index:var(--bx-wait-time-box-z-index);padding:12px;border-radius:0 0 0 8px}.bx-wait-time-box label{display:block;text-transform:uppercase;text-align:right;font-size:12px;font-weight:bold;margin:0}.bx-wait-time-box span{display:block;font-family:var(--bx-monospaced-font);text-align:right;font-size:16px;margin-bottom:10px}.bx-wait-time-box span:last-of-type{margin-bottom:0}.bx-remote-play-settings{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #2d2d2d;display:flex;flex-direction:column;gap:10px}.bx-remote-play-settings > div{display:flex;min-height:30px}.bx-remote-play-settings > div > label{flex:1;font-size:14px;align-self:center}.bx-remote-play-settings > div > label p{margin:4px 0 0;padding:0;color:#888;font-size:12px}.bx-remote-play-resolution{display:block}.bx-remote-play-resolution input[type="radio"]{accent-color:var(--bx-primary-button-color);margin-right:6px}.bx-remote-play-resolution input[type="radio"]:focus{accent-color:var(--bx-primary-button-hover-color)}.bx-remote-play-device-wrapper{display:flex;margin-bottom:12px;gap:10px}.bx-remote-play-device-wrapper:last-child{margin-bottom:2px}.bx-remote-play-device-info{flex:1;align-self:center}.bx-remote-play-device-name{font-size:14px;font-weight:bold;display:inline-block;vertical-align:middle}.bx-remote-play-console-type{font-size:8px;background:#004c87;color:#fff;display:inline-block;border-radius:8px;padding:2px 6px;margin-left:8px;vertical-align:middle}.bx-remote-play-power-state{color:#888;font-size:12px}.bx-remote-play-connect-button{min-height:100%}.bx-remote-play-buttons{display:flex;justify-content:space-between}select.bx-select{min-height:30px}div.bx-select{display:flex;align-items:stretch;flex:0 1 auto;gap:8px}div.bx-select select:disabled ~ button{display:none}div.bx-select select:disabled ~ div{background:#131416;color:#fff;pointer-events:none}div.bx-select select:disabled ~ div .bx-select-indicators{visibility:hidden}div.bx-select > div,div.bx-select button.bx-select-value{min-width:120px;text-align:left;line-height:24px;vertical-align:middle;background:#fff;color:#000;border-radius:4px;padding:2px 8px;display:flex;flex:1;flex-direction:column}div.bx-select > div{min-height:24px}div.bx-select > div input{display:inline-block;margin-right:8px}div.bx-select > div label{margin-bottom:0;font-size:14px;width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-height:15px}div.bx-select > div label span{display:block;font-size:10px;font-weight:bold;text-align:left;line-height:20px;white-space:pre;min-height:15px;align-content:center}div.bx-select button.bx-select-value{border:none;cursor:pointer;min-height:30px;font-size:.9rem;align-items:center}div.bx-select button.bx-select-value > div{display:flex;width:100%}div.bx-select button.bx-select-value span{flex:1;text-align:left;display:inline-block}div.bx-select button.bx-select-value input{margin:0 4px;accent-color:var(--bx-primary-button-color);pointer-events:none}div.bx-select button.bx-select-value:hover input,div.bx-select button.bx-select-value:focus input{accent-color:var(--bx-danger-button-color)}div.bx-select button.bx-select-value:hover::after,div.bx-select button.bx-select-value:focus::after{border-color:#4d4d4d !important}div.bx-select button.bx-button{border:none;width:24px;height:auto;padding:0;color:#fff;border-radius:4px;font-weight:bold;font-size:12px;font-family:var(--bx-monospaced-font);flex-shrink:0}div.bx-select button.bx-button span{line-height:unset}div.bx-select[data-controller-friendly=true] > div{box-sizing:content-box}div.bx-select[data-controller-friendly=true] select{position:absolute !important;top:-9999px !important;left:-9999px !important;visibility:hidden !important}div.bx-select[data-controller-friendly=false]{position:relative}div.bx-select[data-controller-friendly=false] > div{box-sizing:border-box}div.bx-select[data-controller-friendly=false] > div label{margin-right:24px}div.bx-select[data-controller-friendly=false] select:disabled{display:none}div.bx-select[data-controller-friendly=false] select:not(:disabled){cursor:pointer;position:absolute;top:0;right:0;bottom:0;display:block;opacity:0;z-index:calc(var(--bx-settings-z-index) + 1)}div.bx-select[data-controller-friendly=false] select:not(:disabled):hover + div{background:#f0f0f0}div.bx-select[data-controller-friendly=false] select:not(:disabled) + div label::after{content:\'▾\';font-size:14px;position:absolute;right:8px;pointer-events:none}.bx-select-indicators{display:flex;height:4px;gap:2px;margin-bottom:2px}.bx-select-indicators span{content:\' \';display:inline-block;flex:1;background:#cfcfcf;border-radius:4px;min-width:1px}.bx-select-indicators span[data-highlighted]{background:#9c9c9c;min-width:6px}.bx-select-indicators span[data-selected]{background:#aacfe7}.bx-select-indicators span[data-highlighted][data-selected]{background:#5fa3d0}.bx-guide-home-achievements-progress{display:flex;gap:10px;flex-direction:row}.bx-guide-home-achievements-progress .bx-button{margin-bottom:0 !important}body[data-bx-media-type=tv] .bx-guide-home-achievements-progress{flex-direction:column}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress{flex-direction:row}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress > button:first-of-type{flex:1}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress > button:last-of-type{width:40px}body:not([data-bx-media-type=tv]) .bx-guide-home-achievements-progress > button:last-of-type span{display:none}.bx-guide-home-buttons > div{display:flex;flex-direction:row;gap:12px}body[data-bx-media-type=tv] .bx-guide-home-buttons > div{flex-direction:column}body[data-bx-media-type=tv] .bx-guide-home-buttons > div button{margin-bottom:0 !important}body:not([data-bx-media-type=tv]) .bx-guide-home-buttons > div button span{display:none}.bx-guide-home-buttons[data-is-playing="true"] button[data-state=\'normal\']{display:none}.bx-guide-home-buttons[data-is-playing="false"] button[data-state=\'playing\']{display:none}#game-stream div[class^=StreamMenu-module__menuContainer] > div[class^=Menu-module]{overflow:visible}.bx-stream-menu-button-on{fill:#000 !important;background-color:#2d2d2d !important;color:#000 !important}.bx-stream-refresh-button{top:calc(env(safe-area-inset-top, 0px) + 10px + 50px) !important}body[data-media-type=default] .bx-stream-refresh-button{left:calc(env(safe-area-inset-left, 0px) + 11px) !important}body[data-media-type=tv] .bx-stream-refresh-button{top:calc(var(--gds-focus-borderSize) + 80px) !important}.bx-stream-home-button{top:calc(env(safe-area-inset-top, 0px) + 10px + 50px * 2) !important}body[data-media-type=default] .bx-stream-home-button{left:calc(env(safe-area-inset-left, 0px) + 12px) !important}body[data-media-type=tv] .bx-stream-home-button{top:calc(var(--gds-focus-borderSize) + 80px * 2) !important}div[data-testid=media-container][data-position=center]{display:flex}div[data-testid=media-container][data-position=top] video,div[data-testid=media-container][data-position=top] canvas{top:0}div[data-testid=media-container][data-position=bottom] video,div[data-testid=media-container][data-position=bottom] canvas{bottom:0}#game-stream video{margin:auto;align-self:center;background:#000;position:absolute;left:0;right:0}#game-stream canvas{align-self:center;margin:auto;position:absolute;left:0;right:0}#game-stream.bx-taking-screenshot:before{animation:bx-anim-taking-screenshot .5s ease;content:\' \';position:absolute;width:100%;height:100%;z-index:var(--bx-screenshot-animation-z-index)}#gamepass-dialog-root div[class^=Guide-module__guide] .bx-button{overflow:visible;margin-bottom:12px}@-moz-keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}@-webkit-keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}@-o-keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}@keyframes bx-anim-taking-screenshot{0%{border:0 solid rgba(255,255,255,0.502)}50%{border:8px solid rgba(255,255,255,0.502)}100%{border:0 solid rgba(255,255,255,0.502)}}.bx-number-stepper{text-align:center}.bx-number-stepper > div{display:flex;align-items:center}.bx-number-stepper > div span{flex:1;display:inline-block;min-width:40px;font-family:var(--bx-monospaced-font);white-space:pre;font-size:13px;margin:0 4px}.bx-number-stepper > div button{flex-shrink:0;border:none;width:24px;height:24px;margin:0;line-height:24px;background-color:var(--bx-default-button-color);color:#fff;border-radius:4px;font-weight:bold;font-size:14px;font-family:var(--bx-monospaced-font)}@media (hover:hover){.bx-number-stepper > div button:hover{background-color:var(--bx-default-button-hover-color)}}.bx-number-stepper > div button:active{background-color:var(--bx-default-button-hover-color)}.bx-number-stepper > div button:disabled + span{font-family:var(--bx-title-font)}.bx-number-stepper input[type=range]{display:block;margin:8px 0 2px auto;min-width:180px;width:100%;color:#959595 !important}.bx-number-stepper input[type=range]:disabled,.bx-number-stepper button:disabled{display:none}.bx-number-stepper[data-disabled=true] input[type=range],.bx-number-stepper[disabled=true] input[type=range],.bx-number-stepper[data-disabled=true] button,.bx-number-stepper[disabled=true] button{display:none}.bx-dual-number-stepper > span{display:block;font-family:var(--bx-monospaced-font);font-size:13px;white-space:pre;margin:0 4px;text-align:center}.bx-dual-number-stepper > div input[type=range]{display:block;width:100%;min-width:180px;background:transparent;color:#959595 !important;appearance:none;padding:8px 0}.bx-dual-number-stepper > div input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,#fff var(--from),var(--bx-primary-button-color) var(--from) var(--to),#fff var(--to) 100%);height:8px;border-radius:2px}.bx-dual-number-stepper > div input[type=range]::-moz-range-track{background:linear-gradient(90deg,#fff var(--from),var(--bx-primary-button-color) var(--from) var(--to),#fff var(--to) 100%);height:8px;border-radius:2px}.bx-dual-number-stepper > div input[type=range]::-webkit-slider-thumb{margin-top:-4px;appearance:none;width:4px;height:16px;background:#00b85f;border:none;border-radius:2px}.bx-dual-number-stepper > div input[type=range]::-moz-range-thumb{margin-top:-4px;appearance:none;width:4px;height:16px;background:#00b85f;border:none;border-radius:2px}.bx-dual-number-stepper > div input[type=range]:hover::-webkit-slider-runnable-track,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-webkit-slider-runnable-track,.bx-dual-number-stepper > div input[type=range]:focus::-webkit-slider-runnable-track{background:linear-gradient(90deg,#fff var(--from),#006635 var(--from) var(--to),#fff var(--to) 100%)}.bx-dual-number-stepper > div input[type=range]:hover::-moz-range-track,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-moz-range-track,.bx-dual-number-stepper > div input[type=range]:focus::-moz-range-track{background:linear-gradient(90deg,#fff var(--from),#006635 var(--from) var(--to),#fff var(--to) 100%)}.bx-dual-number-stepper > div input[type=range]:hover::-webkit-slider-thumb,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-webkit-slider-thumb,.bx-dual-number-stepper > div input[type=range]:focus::-webkit-slider-thumb{background:#fb3232}.bx-dual-number-stepper > div input[type=range]:hover::-moz-range-thumb,.bx-dual-number-stepper > div input[type=range].bx-dual-number-stepper > div input[type=range]:active::-moz-range-thumb,.bx-dual-number-stepper > div input[type=range]:focus::-moz-range-thumb{background:#fb3232}.bx-dual-number-stepper[data-disabled=true] input[type=range],.bx-dual-number-stepper[disabled=true] input[type=range]{display:none}#bx-game-bar{z-index:var(--bx-game-bar-z-index);position:fixed;bottom:0;width:40px;height:90px;overflow:visible;cursor:pointer}#bx-game-bar > svg{display:none;pointer-events:none;position:absolute;height:28px;margin-top:16px}@media (hover:hover){#bx-game-bar:hover > svg{display:block}}#bx-game-bar .bx-game-bar-container{opacity:0;position:absolute;display:flex;overflow:hidden;background:rgba(26,27,30,0.91);box-shadow:0 0 6px #1c1c1c;transition:opacity .1s ease-in}#bx-game-bar .bx-game-bar-container.bx-show{opacity:.9}#bx-game-bar .bx-game-bar-container.bx-show + svg{display:none !important}#bx-game-bar .bx-game-bar-container.bx-hide{opacity:0;pointer-events:none}#bx-game-bar .bx-game-bar-container button{width:60px;height:60px;border-radius:0}#bx-game-bar .bx-game-bar-container button svg{width:28px;height:28px;transition:transform .08s ease 0s}#bx-game-bar .bx-game-bar-container button:hover{border-radius:0}#bx-game-bar .bx-game-bar-container button:active svg{transform:scale(.75)}#bx-game-bar .bx-game-bar-container button.bx-activated{background-color:#fff}#bx-game-bar .bx-game-bar-container button.bx-activated svg{filter:invert(1)}#bx-game-bar .bx-game-bar-container div[data-activated] button{display:none}#bx-game-bar .bx-game-bar-container div[data-activated=\'false\'] button:first-of-type{display:block}#bx-game-bar .bx-game-bar-container div[data-activated=\'true\'] button:last-of-type{display:block}#bx-game-bar[data-position="bottom-left"]{left:0;direction:ltr}#bx-game-bar[data-position="bottom-left"] .bx-game-bar-container{border-radius:0 10px 10px 0}#bx-game-bar[data-position="bottom-right"]{right:0;direction:rtl}#bx-game-bar[data-position="bottom-right"] .bx-game-bar-container{direction:ltr;border-radius:10px 0 0 10px}.bx-badges{margin-left:0;user-select:none;-webkit-user-select:none}.bx-badge{border:none;display:inline-block;line-height:24px;color:#fff;font-family:var(--bx-title-font-semibold);font-size:14px;font-weight:400;margin:0 8px 8px 0;box-shadow:0 0 6px #000;border-radius:4px}.bx-badge-name{background-color:#2d3036;border-radius:4px 0 0 4px}.bx-badge-name svg{width:16px;height:16px}.bx-badge-value{background-color:#808080;border-radius:0 4px 4px 0}.bx-badge-name,.bx-badge-value{display:inline-block;padding:0 8px;line-height:30px;vertical-align:bottom}.bx-badge-battery[data-charging=true] span:first-of-type::after{content:\' ⚡️\'}div[class^=StreamMenu-module__container] .bx-badges{position:absolute;max-width:500px}#gamepass-dialog-root .bx-badges{position:fixed;top:60px;left:460px;max-width:500px}@media (min-width:568px) and (max-height:480px){#gamepass-dialog-root .bx-badges{position:unset;top:unset;left:unset;margin:8px 0}}.bx-stats-bar{display:flex;flex-direction:row;gap:8px;user-select:none;-webkit-user-select:none;position:fixed;top:0;background-color:#000;color:#fff;font-family:var(--bx-monospaced-font);font-size:.9rem;padding-left:8px;z-index:var(--bx-stats-bar-z-index);text-wrap:nowrap}.bx-stats-bar[data-stats*="[time]"] > .bx-stat-time,.bx-stats-bar[data-stats*="[play]"] > .bx-stat-play,.bx-stats-bar[data-stats*="[batt]"] > .bx-stat-batt,.bx-stats-bar[data-stats*="[fps]"] > .bx-stat-fps,.bx-stats-bar[data-stats*="[ping]"] > .bx-stat-ping,.bx-stats-bar[data-stats*="[jit]"] > .bx-stat-jit,.bx-stats-bar[data-stats*="[btr]"] > .bx-stat-btr,.bx-stats-bar[data-stats*="[dt]"] > .bx-stat-dt,.bx-stats-bar[data-stats*="[pl]"] > .bx-stat-pl,.bx-stats-bar[data-stats*="[fl]"] > .bx-stat-fl,.bx-stats-bar[data-stats*="[dl]"] > .bx-stat-dl,.bx-stats-bar[data-stats*="[ul]"] > .bx-stat-ul{display:inline-flex;align-items:baseline}.bx-stats-bar[data-stats$="[time]"] > .bx-stat-time,.bx-stats-bar[data-stats$="[play]"] > .bx-stat-play,.bx-stats-bar[data-stats$="[batt]"] > .bx-stat-batt,.bx-stats-bar[data-stats$="[fps]"] > .bx-stat-fps,.bx-stats-bar[data-stats$="[ping]"] > .bx-stat-ping,.bx-stats-bar[data-stats$="[jit]"] > .bx-stat-jit,.bx-stats-bar[data-stats$="[btr]"] > .bx-stat-btr,.bx-stats-bar[data-stats$="[dt]"] > .bx-stat-dt,.bx-stats-bar[data-stats$="[pl]"] > .bx-stat-pl,.bx-stats-bar[data-stats$="[fl]"] > .bx-stat-fl,.bx-stats-bar[data-stats$="[dl]"] > .bx-stat-dl,.bx-stats-bar[data-stats$="[ul]"] > .bx-stat-ul{border-right:none}.bx-stats-bar::before{display:none;content:\'👀\';vertical-align:middle;margin-right:8px}.bx-stats-bar[data-display=glancing]::before{display:inline-block}.bx-stats-bar[data-position=top-left]{left:0;border-radius:0 0 4px 0}.bx-stats-bar[data-position=top-right]{right:0;border-radius:0 0 0 4px}.bx-stats-bar[data-position=top-center]{transform:translate(-50%,0);left:50%;border-radius:0 0 4px 4px}.bx-stats-bar[data-shadow=true]{background:none;filter:drop-shadow(1px 0 0 rgba(0,0,0,0.941)) drop-shadow(-1px 0 0 rgba(0,0,0,0.941)) drop-shadow(0 1px 0 rgba(0,0,0,0.941)) drop-shadow(0 -1px 0 rgba(0,0,0,0.941))}.bx-stats-bar > div{display:none;border-right:1px solid #fff;padding-right:8px}.bx-stats-bar label{margin:0 8px 0 0;font-family:var(--bx-title-font);font-size:70%;font-weight:bold;vertical-align:middle;cursor:help}.bx-stats-bar span{display:inline-block;text-align:right;vertical-align:middle;white-space:pre}.bx-stats-bar span[data-grade=good]{color:#6bffff}.bx-stats-bar span[data-grade=ok]{color:#fff16b}.bx-stats-bar span[data-grade=bad]{color:#ff5f5f}.bx-mkb-settings{display:flex;flex-direction:column;flex:1;padding-bottom:10px;overflow:hidden}.bx-mkb-pointer-lock-msg{user-select:none;-webkit-user-select:none;position:fixed;left:50%;bottom:40px;transform:translateX(-50%);margin:auto;background:#151515;z-index:var(--bx-mkb-pointer-lock-msg-z-index);color:#fff;font-weight:400;font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:1.3rem;padding:12px;border-radius:8px;align-items:center;box-shadow:0 0 6px #000;min-width:300px;opacity:.9;display:flex;flex-direction:column;gap:10px}.bx-mkb-pointer-lock-msg:hover{opacity:1}.bx-mkb-pointer-lock-msg > p{margin:0;width:100%;font-size:22px;margin-bottom:4px;font-weight:bold;text-align:left}.bx-mkb-pointer-lock-msg > div{width:100%;display:flex;flex-direction:row;gap:10px}.bx-mkb-pointer-lock-msg > div button:first-of-type{flex-shrink:1}.bx-mkb-pointer-lock-msg > div button:last-of-type{flex-grow:1}.bx-mkb-key-row{display:flex;margin-bottom:10px;align-items:center;gap:20px}.bx-mkb-key-row label{margin-bottom:0;font-family:var(--bx-promptfont-font);font-size:32px;text-align:center}.bx-mkb-settings.bx-editing .bx-mkb-key-row button{background:#393939;border-radius:4px;border:none}.bx-mkb-settings.bx-editing .bx-mkb-key-row button:hover{background:#333;cursor:pointer}.bx-mkb-action-buttons > div{text-align:right;display:none}.bx-mkb-action-buttons button{margin-left:8px}.bx-mkb-settings:not(.bx-editing) .bx-mkb-action-buttons > div:first-child{display:block}.bx-mkb-settings.bx-editing .bx-mkb-action-buttons > div:last-child{display:block}.bx-mkb-note{display:block;margin:0 0 10px;font-size:12px;text-align:center}button.bx-binding-button{flex:1;min-height:38px;border:none;border-radius:4px;font-size:14px;color:#fff;display:flex;align-items:center;align-self:center;padding:0 6px}button.bx-binding-button:disabled{background:#131416;padding:0 8px}button.bx-binding-button:not(:disabled){border:2px solid transparent;border-top:none;border-bottom:4px solid #252525;background:#3b3b3b;cursor:pointer}button.bx-binding-button:not(:disabled):hover,button.bx-binding-button:not(:disabled).bx-focusable:focus{background:#20b217;border-bottom-color:#186c13}button.bx-binding-button:not(:disabled):active{background:#16900f;border-bottom:3px solid #0c4e08;border-left-width:2px;border-right-width:2px}button.bx-binding-button:not(:disabled).bx-focusable:focus::after{top:-6px;left:-8px;right:-8px;bottom:-10px}.bx-settings-row .bx-binding-button-wrapper button.bx-binding-button{min-width:60px}.bx-controller-customizations-container .bx-btn-detect{display:block;margin-bottom:20px}.bx-controller-customizations-container .bx-btn-detect.bx-monospaced{background:none;font-weight:bold;font-size:12px}.bx-controller-customizations-container .bx-buttons-grid{display:grid;grid-template-columns:auto auto;column-gap:20px;row-gap:10px;margin-bottom:20px}.bx-controller-key-row{display:flex;align-items:stretch}.bx-controller-key-row > label{margin-bottom:0;font-family:var(--bx-promptfont-font);font-size:32px;text-align:center;min-width:50px;flex-shrink:0;display:flex;align-self:center}.bx-controller-key-row > label::after{content:\'❯\';margin:0 12px;font-size:16px;align-self:center}.bx-controller-key-row .bx-select{width:100% !important}.bx-controller-key-row .bx-select > div{min-width:50px}.bx-controller-key-row .bx-select label{font-family:var(--bx-promptfont-font),var(--bx-normal-font);font-size:32px;text-align:center;margin-bottom:6px;height:40px;line-height:40px}.bx-controller-key-row:hover > label{color:#ffe64b}.bx-controller-key-row:hover > label::after{color:#fff}.bx-controller-customization-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.bx-controller-customization-summary span{font-family:var(--bx-promptfont);font-size:24px;border-radius:6px;background:#131313;color:#fff;display:inline-block;padding:2px;text-align:center}.bx-product-details-icons{padding:8px;border-radius:4px}.bx-product-details-icons svg{margin-right:8px}.bx-product-details-buttons{display:flex;gap:10px;flex-direction:row}.bx-product-details-buttons button{max-width:max-content;margin:10px 0 0 0;display:flex}@media (min-width:568px) and (max-height:480px){.bx-product-details-buttons{flex-direction:column}.bx-product-details-buttons button{margin:8px 0 0 10px}}',
         PREF_HIDE_SECTIONS = getGlobalPref("ui.hideSections"),
         selectorToHide = [];
     if (PREF_HIDE_SECTIONS.includes("news")) selectorToHide.push("#BodyContent > div[class*=CarouselRow-module]");
@@ -9627,7 +9729,7 @@ function patchHistoryMethod(type) {
 
 function onHistoryChanged(e) {
     if (e && e.arguments && e.arguments[0] && e.arguments[0].origin === "better-xcloud") return;
-    window.setTimeout(RemotePlayManager.detect, 10), NavigationDialogManager.getInstance().hide(), LoadingScreen.reset(), BxEventBus.Stream.emit("state.stopped", {});
+    NavigationDialogManager.getInstance().hide(), LoadingScreen.reset(), BxEventBus.Stream.emit("state.stopped", {});
 }
 
 function setCodecPreferences(sdp, preferredCodec) {
@@ -9700,7 +9802,7 @@ class WebGL2Player extends BaseCanvasPlayer {
         let gl = this.gl,
             program = this.program,
             filterId = this.toFilterId(this.options.processing);
-        gl.uniform2f(gl.getUniformLocation(program, "iResolution"), this.$canvas.width, this.$canvas.height), gl.uniform1i(gl.getUniformLocation(program, "filterId"), filterId), gl.uniform1f(gl.getUniformLocation(program, "sharpenFactor"), this.options.sharpness), gl.uniform1f(gl.getUniformLocation(program, "brightness"), this.options.brightness / 100), gl.uniform1f(gl.getUniformLocation(program, "contrast"), this.options.contrast / 100), gl.uniform1f(gl.getUniformLocation(program, "saturation"), this.options.saturation / 100);
+        gl.uniform2f(gl.getUniformLocation(program, "iResolution"), this.$canvas.width, this.$canvas.height), gl.uniform1i(gl.getUniformLocation(program, "filterId"), filterId), gl.uniform1i(gl.getUniformLocation(program, "qualityMode"), this.options.processingMode === "quality" ? 1 : 0), gl.uniform1f(gl.getUniformLocation(program, "sharpenFactor"), this.options.sharpness / (this.options.processingMode === "quality" ? 1 : 1.2)), gl.uniform1f(gl.getUniformLocation(program, "brightness"), this.options.brightness / 100), gl.uniform1f(gl.getUniformLocation(program, "contrast"), this.options.contrast / 100), gl.uniform1f(gl.getUniformLocation(program, "saturation"), this.options.saturation / 100);
     }
     updateFrame() {
         let gl = this.gl;
@@ -9722,7 +9824,7 @@ class WebGL2Player extends BaseCanvasPlayer {
 in vec4 position;void main() {gl_Position = position;}`), gl.compileShader(vShader);
         let fShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fShader, `#version 300 es
-precision mediump float;uniform sampler2D data;uniform vec2 iResolution;const int FILTER_UNSHARP_MASKING = 1;const float CAS_CONTRAST_PEAK = 0.8 * -3.0 + 8.0;const vec3 LUMINOSITY_FACTOR = vec3(0.299, 0.587, 0.114);uniform int filterId;uniform float sharpenFactor;uniform float brightness;uniform float contrast;uniform float saturation;out vec4 fragColor;vec3 clarityBoost(sampler2D tex, vec2 coord, vec3 e) {vec2 texelSize = 1.0 / iResolution.xy;vec3 a = texture(tex, coord + texelSize * vec2(-1, 1)).rgb;vec3 b = texture(tex, coord + texelSize * vec2(0, 1)).rgb;vec3 c = texture(tex, coord + texelSize * vec2(1, 1)).rgb;vec3 d = texture(tex, coord + texelSize * vec2(-1, 0)).rgb;vec3 f = texture(tex, coord + texelSize * vec2(1, 0)).rgb;vec3 g = texture(tex, coord + texelSize * vec2(-1, -1)).rgb;vec3 h = texture(tex, coord + texelSize * vec2(0, -1)).rgb;vec3 i = texture(tex, coord + texelSize * vec2(1, -1)).rgb;if (filterId == FILTER_UNSHARP_MASKING) {vec3 gaussianBlur = (a + c + g + i) * 1.0 + (b + d + f + h) * 2.0 + e * 4.0;gaussianBlur /= 16.0;return e + (e - gaussianBlur) * sharpenFactor / 3.0;}vec3 minRgb = min(min(min(d, e), min(f, b)), h);minRgb += min(min(a, c), min(g, i));vec3 maxRgb = max(max(max(d, e), max(f, b)), h);maxRgb += max(max(a, c), max(g, i));vec3 reciprocalMaxRgb = 1.0 / maxRgb;vec3 amplifyRgb = clamp(min(minRgb, 2.0 - maxRgb) * reciprocalMaxRgb, 0.0, 1.0);amplifyRgb = inversesqrt(amplifyRgb);vec3 weightRgb = -(1.0 / (amplifyRgb * CAS_CONTRAST_PEAK));vec3 reciprocalWeightRgb = 1.0 / (4.0 * weightRgb + 1.0);vec3 window = b + d + f + h;vec3 outColor = clamp((window * weightRgb + e) * reciprocalWeightRgb, 0.0, 1.0);return mix(e, outColor, sharpenFactor / 2.0);}void main() {vec2 uv = gl_FragCoord.xy / iResolution.xy;vec3 color = texture(data, uv).rgb;color = sharpenFactor > 0.0 ? clarityBoost(data, uv, color) : color;color = saturation != 1.0 ? mix(vec3(dot(color, LUMINOSITY_FACTOR)), color, saturation) : color;color = contrast * (color - 0.5) + 0.5;color = brightness * color;fragColor = vec4(color, 1.0);}`), gl.compileShader(fShader);
+precision mediump float;uniform sampler2D data;uniform vec2 iResolution;const int FILTER_UNSHARP_MASKING = 1;const int FILTER_CAS = 2;const float CAS_CONTRAST_PEAK = 0.8 * -3.0 + 8.0;const vec3 LUMINOSITY_FACTOR = vec3(0.299, 0.587, 0.114);uniform int filterId;uniform bool qualityMode;uniform float sharpenFactor;uniform float brightness;uniform float contrast;uniform float saturation;out vec4 fragColor;vec3 clarityBoost(sampler2D tex, vec2 coord, vec3 e) {vec2 texelSize = 1.0 / iResolution.xy;vec3 b = texture(tex, coord + texelSize * vec2(0, 1)).rgb;vec3 d = texture(tex, coord + texelSize * vec2(-1, 0)).rgb;vec3 f = texture(tex, coord + texelSize * vec2(1, 0)).rgb;vec3 h = texture(tex, coord + texelSize * vec2(0, -1)).rgb;vec3 a;vec3 c;vec3 g;vec3 i;if (filterId == FILTER_UNSHARP_MASKING || qualityMode) {a = texture(tex, coord + texelSize * vec2(-1, 1)).rgb;c = texture(tex, coord + texelSize * vec2(1, 1)).rgb;g = texture(tex, coord + texelSize * vec2(-1, -1)).rgb;i = texture(tex, coord + texelSize * vec2(1, -1)).rgb;}if (filterId == FILTER_UNSHARP_MASKING) {vec3 gaussianBlur = (a + c + g + i) * 1.0 + (b + d + f + h) * 2.0 + e * 4.0;gaussianBlur /= 16.0;return e + (e - gaussianBlur) * sharpenFactor / 3.0;}vec3 minRgb = min(min(min(d, e), min(f, b)), h);vec3 maxRgb = max(max(max(d, e), max(f, b)), h);if (qualityMode) {minRgb += min(min(a, c), min(g, i));maxRgb += max(max(a, c), max(g, i));}vec3 reciprocalMaxRgb = 1.0 / maxRgb;vec3 amplifyRgb = clamp(min(minRgb, 2.0 - maxRgb) * reciprocalMaxRgb, 0.0, 1.0);amplifyRgb = inversesqrt(amplifyRgb);vec3 weightRgb = -(1.0 / (amplifyRgb * CAS_CONTRAST_PEAK));vec3 reciprocalWeightRgb = 1.0 / (4.0 * weightRgb + 1.0);vec3 window = b + d + f + h;vec3 outColor = clamp((window * weightRgb + e) * reciprocalWeightRgb, 0.0, 1.0);return mix(e, outColor, sharpenFactor / 2.0);}void main() {vec2 uv = gl_FragCoord.xy / iResolution.xy;vec3 color = texture(data, uv).rgb;if (sharpenFactor > 0.0) {color = clarityBoost(data, uv, color);}color = mix(vec3(dot(color, LUMINOSITY_FACTOR)), color, saturation);color = contrast * (color - 0.5) + 0.5;color = brightness * color;fragColor = vec4(color, 1.0);}`), gl.compileShader(fShader);
         let program = gl.createProgram();
         if (this.program = program, gl.attachShader(program, vShader), gl.attachShader(program, fShader), gl.linkProgram(program), gl.useProgram(program), !gl.getProgramParameter(program, gl.LINK_STATUS)) console.error(`Link failed: ${gl.getProgramInfoLog(program)}`), console.error(`vs info-log: ${gl.getShaderInfoLog(vShader)}`), console.error(`fs info-log: ${gl.getShaderInfoLog(fShader)}`);
         this.updateCanvas();
@@ -9895,6 +9997,7 @@ function patchVideoApi() {
             if (this.style.visibility = "visible", !this.videoWidth) return;
             let playerOptions = {
                     processing: getStreamPref("video.processing"),
+                    processingMode: getStreamPref("video.processing.mode"),
                     sharpness: getStreamPref("video.processing.sharpness"),
                     saturation: getStreamPref("video.saturation"),
                     contrast: getStreamPref("video.contrast"),
@@ -9912,7 +10015,7 @@ function patchVideoApi() {
             return nativePlay.apply(this);
         }
         let $parent = this.parentElement;
-        if (!this.src && $parent.dataset.testid === "media-container") this.addEventListener("loadedmetadata", showFunc, {
+        if (!this.src && $parent?.dataset.testid === "media-container") this.addEventListener("loadedmetadata", showFunc, {
             once: !0
         });
         return nativePlay.apply(this);
@@ -10562,7 +10665,7 @@ class StreamUiHandler {
             },
             $btnStreamSettings = StreamUiHandler.$btnStreamSettings;
         if (typeof $btnStreamSettings === "undefined") $btnStreamSettings = StreamUiHandler.cloneStreamHudButton($orgButton, t("better-xcloud"), BxIcon.BETTER_XCLOUD), $btnStreamSettings?.addEventListener("click", (e) => {
-            hideGripHandle(), e.preventDefault()
+            
         }), StreamUiHandler.$btnStreamSettings = $btnStreamSettings;
         let streamStats = StreamStats.getInstance(),
             $btnStreamStats = StreamUiHandler.$btnStreamStats;
@@ -10583,6 +10686,43 @@ class StreamUiHandler {
         StreamUiHandler.$btnStreamSettings = void 0, StreamUiHandler.$btnStreamStats = void 0, StreamUiHandler.$btnRefresh = void 0, StreamUiHandler.$btnHome = void 0;
     }
 }
+
+function handleDeepLink() {
+    let deepLinkData = JSON.parse(AppInterface.getDeepLinkData());
+    if (console.log("deepLinkData", deepLinkData), !deepLinkData.host) return;
+    let onReady = () => {
+            if (deepLinkData.host === "PLAY") localRedirect("/launch/" + deepLinkData.data.join("/"));
+            else if (deepLinkData.host === "DEVICE_CODE") localRedirect("/login/deviceCode");
+            else if (deepLinkData.host === "REMOTE_PLAY") {
+                let serverId = deepLinkData.data[0],
+                    resolution = deepLinkData.data[1] || "1080p",
+                    manager = RemotePlayManager.getInstance();
+                if (!manager) return;
+                if (manager.isReady()) {
+                    manager.play(serverId, resolution);
+                    return;
+                }
+                window.addEventListener(BxEvent.REMOTE_PLAY_READY, () => {
+                    manager.play(serverId, resolution);
+                });
+            }
+        },
+        handled = !1,
+        observer = new MutationObserver((mutationList) => {
+            mutationList.forEach((mutation) => {
+                if (handled || mutation.type !== "childList") return;
+                let $target = mutation.target;
+                if (!handled && $target.className && $target.className.startsWith && $target.className.includes("HomePage-module__homePage")) {
+                    handled = !0, observer.disconnect(), setTimeout(onReady, 1000);
+                    return;
+                }
+            });
+        });
+    observer.observe(document.documentElement, {
+        subtree: !0,
+        childList: !0
+    });
+}
 SettingsManager.getInstance();
 if (window.location.pathname.includes("/auth/msa")) {
     let nativePushState = window.history.pushState;
@@ -10593,7 +10733,7 @@ if (window.location.pathname.includes("/auth/msa")) {
             return;
         }
         return nativePushState.apply(this, arguments);
-    }, new Error("[Better xCloud] Refreshing the page after logging in");
+    }, new Error("[LobbyCore] Refreshing the page after logging in");
 }
 BxLogger.info("readyState", document.readyState);
 if (BX_FLAGS.SafariWorkaround && document.readyState !== "loading") {
@@ -10610,8 +10750,9 @@ if (BX_FLAGS.SafariWorkaround && document.readyState !== "loading") {
     let $fragment = document.createDocumentFragment();
     throw $fragment.appendChild(CE("style", !1, css)), $fragment.appendChild(CE("div", {
         class: "bx-reload-overlay"
-    }, CE("div", !1, CE("p", !1, t("load-failed-message")), $secondaryAction))), document.documentElement.appendChild($fragment), isSafari && window.location.reload(!0), new Error("[Better xCloud] Executing workaround for Safari");
+    }, CE("div", !1, CE("p", !1, t("load-failed-message")), $secondaryAction))), document.documentElement.appendChild($fragment), isSafari && window.location.reload(!0), new Error("[LobbyCore] Executing workaround for Safari");
 }
+if (!window.location.pathname.match(/^\/[a-zA-Z]{2}-[a-zA-Z]{2}\/play/)) throw new Error("[BotLobby] Not xCloud page");
 window.addEventListener("load", (e) => {
     window.setTimeout(() => {
         if (document.body.classList.contains("legacyBackground")) window.stop(), window.location.reload(!0);
@@ -10625,6 +10766,12 @@ document.addEventListener("readystatechange", (e) => {
         $parent && ($parent.style.display = "none");
     }
     preloadFonts();
+});
+if (AppInterface) window.addEventListener(BxEvent.XCLOUD_ROUTER_HISTORY_READY, (e) => {
+    if (window.location.pathname.includes("/fireos-browser-update")) localRedirect("/play");
+    else handleDeepLink();
+}, {
+    once: !0
 });
 window.BX_EXPOSED = BxExposed;
 window.addEventListener(BxEvent.POPSTATE, onHistoryChanged);
@@ -10694,7 +10841,7 @@ BxEventBus.Stream.on("dataChannelCreated", (payload) => {
             json = JSON.parse(JSON.parse(msg.data).content),
             currentId = currentStream.xboxTitleId ?? null,
             newId = parseInt(json.titleid, 16);
-        if (STATES.remotePlay.isPlaying)
+        if (window.location.pathname.includes("/play/consoles/launch/"))
             if (currentStream.titleSlug = "remote-play", json.focused) {
                 let productTitle = await XboxApi.getProductTitle(newId);
                 if (productTitle) currentStream.titleSlug = productTitleToSlug(productTitle);
@@ -10726,8 +10873,7 @@ function main() {
         BX_FLAGS.ForceNativeMkbTitles.push(...customList);
     }
     if (StreamSettings.setup(), patchRtcPeerConnection(), patchRtcCodecs(), interceptHttpRequests(), patchVideoApi(), patchCanvasContext(), AppInterface && patchPointerLockApi(), getGlobalPref("audio.volume.booster.enabled") && patchAudioContext(), getGlobalPref("block.tracking")) patchMeControl(), disableAdobeAudienceManager();
-    if (addCss(), StreamStatsCollector.setupEvents(), StreamBadges.setupEvents(), StreamStats.setupEvents(), WebGPUPlayer.prepare(), STATES.userAgent.capabilities.touch && TouchController.updateCustomList(), DeviceVibrationManager.getInstance(), BX_FLAGS.CheckForUpdate && checkForUpdate(), Patcher.init(), disablePwa(), getGlobalPref("xhome.enabled")) RemotePlayManager.detect();
-    if (getGlobalPref("touchController.mode") === "all") TouchController.setup();
+    if (addCss(), StreamStatsCollector.setupEvents(), StreamBadges.setupEvents(), StreamStats.setupEvents(), WebGPUPlayer.prepare(), STATES.userAgent.capabilities.touch && TouchController.updateCustomList(), DeviceVibrationManager.getInstance(), BX_FLAGS.CheckForUpdate && checkForUpdate(), Patcher.init(), disablePwa(), getGlobalPref("touchController.mode") === "all") TouchController.setup();
     if (AppInterface && (getGlobalPref("mkb.enabled") || getGlobalPref("nativeMkb.mode") === "on")) STATES.pointerServerPort = AppInterface.startPointerServer() || 9269, BxLogger.info("startPointerServer", "Port", STATES.pointerServerPort.toString());
     if (getGlobalPref("ui.gameCard.waitTime.show") && GameTile.setup(), EmulatedMkbHandler.setupEvents(), getGlobalPref("ui.controllerStatus.show")) window.addEventListener("gamepadconnected", (e) => showGamepadToast(e.gamepad)), window.addEventListener("gamepaddisconnected", (e) => showGamepadToast(e.gamepad));
 }
