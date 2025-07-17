@@ -19,7 +19,7 @@
         enabled: false,
         connected: false,
         controllerType: 'xbox360',
-        sensitivity: 0.6,
+        sensitivity: 1.0,
         keyMappings: {
             // Default WASD + Gaming layout
             87: 'ANALOG_LEFT_UP',      // W
