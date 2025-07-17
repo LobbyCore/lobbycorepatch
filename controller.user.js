@@ -365,23 +365,27 @@
     function createAPI() {
         window.FakeGamepadAPI = {
             // Connection control
-            connect: function() {
-                config.connected = true;
-                addEventListeners();
-                connectGamepad();
-                saveConfig();
-                notifyIPC('connected', { success: true });
-                return { success: true, message: "Fake gamepad connected" };
-            },
+     connect: function() {
+    config.connected = true;
+    config.enabled = true; // Auto-enable when connecting
+    addEventListeners();
+    connectGamepad();
+    saveConfig();
+    notifyIPC('connected', { success: true });
+    console.log('[FakeGamepad] Connected and enabled');
+    return { success: true, message: "Fake gamepad connected and enabled" };
+},
 
-            disconnect: function() {
-                config.connected = false;
-                removeEventListeners();
-                disconnectGamepad();
-                saveConfig();
-                notifyIPC('disconnected', { success: true });
-                return { success: true, message: "Fake gamepad disconnected" };
-            },
+disconnect: function() {
+    config.connected = false;
+    config.enabled = false; // Auto-disable when disconnecting
+    removeEventListeners();
+    disconnectGamepad();
+    saveConfig();
+    notifyIPC('disconnected', { success: true });
+    console.log('[FakeGamepad] Disconnected and disabled');
+    return { success: true, message: "Fake gamepad disconnected and disabled" };
+},
 
             // Enable/disable (different from connect - this controls input processing)
             enable: function() {
