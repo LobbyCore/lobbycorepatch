@@ -8,6 +8,7 @@
 // @match        https://xbox.com/*
 // @grant        none
 // @run-at       document-end
+// @license      MIT
 // ==/UserScript==
 
 (function() {
