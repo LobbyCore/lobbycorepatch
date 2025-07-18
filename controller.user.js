@@ -8,7 +8,6 @@
 // @match        https://xbox.com/*
 // @grant        none
 // @run-at       document-end
-// @license      MIT
 // ==/UserScript==
 
 (function() {
@@ -19,29 +18,45 @@
         enabled: false,
         connected: false,
         controllerType: 'xbox360',
-        sensitivity: 1.0,
+        sensitivity: 0.6,
+        blockKeyboardInputs: true, // Block mapped keys from normal keyboard processing
         keyMappings: {
-            // Default WASD + Gaming layout
+            // Left stick (WASD)
             87: 'ANALOG_LEFT_UP',      // W
             83: 'ANALOG_LEFT_DOWN',    // S
             65: 'ANALOG_LEFT_LEFT',    // A
             68: 'ANALOG_LEFT_RIGHT',   // D
+
+            // Right stick (IJKL)
             73: 'ANALOG_RIGHT_UP',     // I
             75: 'ANALOG_RIGHT_DOWN',   // K
             74: 'ANALOG_RIGHT_LEFT',   // J
             76: 'ANALOG_RIGHT_RIGHT',  // L
-            32: 'A',                   // Space
-            16: 'B',                   // Shift
-            17: 'X',                   // Ctrl
-            18: 'Y',                   // Alt
-            81: 'LB',                  // Q
-            69: 'RB',                  // E
-            82: 'LT',                  // R
-            84: 'RT',                  // T
-            9:  'SELECT',              // Tab
-            13: 'START',               // Enter
-            70: 'L3',                  // F
-            71: 'R3',                  // G
+
+            // Face buttons
+            32: 'A',                   // Space = A button
+            17: 'B',                   // Ctrl = B button
+            27: 'B',                   // Esc = B button
+            67: 'B',                   // C = B button
+            82: 'X',                   // R = X button
+            70: 'X',                   // F = X button
+            49: 'Y',                   // 1 = Y button
+
+            // Shoulder buttons
+            69: 'RT',                  // E = RT
+            81: 'LT',                  // Q = LT
+            90: 'LB',                  // Z = LB
+            88: 'RB',                  // X = RB
+
+            // Stick buttons
+            16: 'L3',                  // Shift = L3
+            86: 'R3',                  // V = R3
+
+            // Menu buttons
+            13: 'START',               // Enter = START
+            9:  'SELECT',              // Tab = SELECT
+
+            // D-pad (Arrow keys)
             38: 'STICK_UP',            // Arrow Up
             40: 'STICK_DOWN',          // Arrow Down
             37: 'STICK_LEFT',          // Arrow Left
@@ -217,11 +232,20 @@
     }
 
     function handleKeyUp(event) {
-        if (!config.enabled || !config.connected) return;
-
         const keyCode = event.keyCode;
         const mappedButton = config.keyMappings[keyCode];
-        if (!mappedButton || !controllerButtons[mappedButton]) return;
+
+        // Always block mapped keys if blocking is enabled, regardless of gamepad state
+        if (mappedButton && config.blockKeyboardInputs) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }
+
+        // Only process gamepad inputs if enabled and connected
+        if (!config.enabled || !config.connected || !mappedButton) return;
+
+        if (!controllerButtons[mappedButton]) return;
 
         controllerButtons[mappedButton].pressed = false;
 
@@ -240,14 +264,20 @@
     }
 
     function handleKeyDown(event) {
-        if (!config.enabled || !config.connected) return;
-
         const keyCode = event.keyCode;
         const mappedButton = config.keyMappings[keyCode];
-        if (!mappedButton || !controllerButtons[mappedButton]) return;
 
-        // Prevent default for mapped keys
-        event.preventDefault();
+        // Always block mapped keys if blocking is enabled, regardless of gamepad state
+        if (mappedButton && config.blockKeyboardInputs) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }
+
+        // Only process gamepad inputs if enabled and connected
+        if (!config.enabled || !config.connected || !mappedButton) return;
+
+        if (!controllerButtons[mappedButton]) return;
 
         // Reset opposite analog directions
         if (mappedButton.startsWith('ANALOG_')) {
@@ -309,18 +339,25 @@
 
         keydownListener = handleKeyDown;
         keyupListener = handleKeyUp;
-        window.addEventListener("keydown", keydownListener, true);
-        window.addEventListener("keyup", keyupListener, true);
+
+        // Use capture phase and highest priority to intercept keys before other handlers
+        window.addEventListener("keydown", keydownListener, { capture: true, passive: false });
+        window.addEventListener("keyup", keyupListener, { capture: true, passive: false });
+
+        // Also add to document to catch events that might bypass window
+        document.addEventListener("keydown", keydownListener, { capture: true, passive: false });
+        document.addEventListener("keyup", keyupListener, { capture: true, passive: false });
+
         console.log('[FakeGamepad] Event listeners added');
     }
 
     function removeEventListeners() {
         if (keydownListener) {
-            window.removeEventListener("keydown", keydownListener, true);
+            window.removeEventListener("keydown", keydownListener, { capture: true });
+            window.removeEventListener("keyup", keyupListener, { capture: true });
+            document.removeEventListener("keydown", keydownListener, { capture: true });
+            document.removeEventListener("keyup", keyupListener, { capture: true });
             keydownListener = null;
-        }
-        if (keyupListener) {
-            window.removeEventListener("keyup", keyupListener, true);
             keyupListener = null;
         }
         console.log('[FakeGamepad] Event listeners removed');
@@ -365,27 +402,35 @@
     function createAPI() {
         window.FakeGamepadAPI = {
             // Connection control
-     connect: function() {
-    config.connected = true;
-    config.enabled = true; // Auto-enable when connecting
-    addEventListeners();
-    connectGamepad();
-    saveConfig();
-    notifyIPC('connected', { success: true });
-    console.log('[FakeGamepad] Connected and enabled');
-    return { success: true, message: "Fake gamepad connected and enabled" };
-},
+            connect: function() {
+                config.connected = true;
 
-disconnect: function() {
-    config.connected = false;
-    config.enabled = false; // Auto-disable when disconnecting
-    removeEventListeners();
-    disconnectGamepad();
-    saveConfig();
-    notifyIPC('disconnected', { success: true });
-    console.log('[FakeGamepad] Disconnected and disabled');
-    return { success: true, message: "Fake gamepad disconnected and disabled" };
-},
+                // Always add event listeners when connecting (for key blocking)
+                if (!keydownListener) {
+                    addEventListeners();
+                }
+
+                connectGamepad();
+                saveConfig();
+                notifyIPC('connected', { success: true });
+                console.log('[FakeGamepad] Connected - Event listeners active for key blocking');
+                return { success: true, message: "Fake gamepad connected" };
+            },
+
+            disconnect: function() {
+                config.connected = false;
+
+                // Only remove listeners if blocking is also disabled
+                if (!config.blockKeyboardInputs) {
+                    removeEventListeners();
+                }
+
+                disconnectGamepad();
+                saveConfig();
+                notifyIPC('disconnected', { success: true });
+                console.log('[FakeGamepad] Disconnected');
+                return { success: true, message: "Fake gamepad disconnected" };
+            },
 
             // Enable/disable (different from connect - this controls input processing)
             enable: function() {
@@ -453,15 +498,40 @@ disconnect: function() {
             },
 
             resetKeyMappings: function() {
-                // Reset to default mappings
+                // Reset to your custom default mappings
                 config.keyMappings = {
+                    // Left stick (WASD)
                     87: 'ANALOG_LEFT_UP', 83: 'ANALOG_LEFT_DOWN',
                     65: 'ANALOG_LEFT_LEFT', 68: 'ANALOG_LEFT_RIGHT',
+
+                    // Right stick (IJKL)
                     73: 'ANALOG_RIGHT_UP', 75: 'ANALOG_RIGHT_DOWN',
                     74: 'ANALOG_RIGHT_LEFT', 76: 'ANALOG_RIGHT_RIGHT',
-                    32: 'A', 16: 'B', 17: 'X', 18: 'Y',
-                    81: 'LB', 69: 'RB', 82: 'LT', 84: 'RT',
-                    9: 'SELECT', 13: 'START', 70: 'L3', 71: 'R3',
+
+                    // Face buttons
+                    32: 'A',    // Space = A
+                    17: 'B',    // Ctrl = B
+                    27: 'B',    // Esc = B
+                    67: 'B',    // C = B
+                    82: 'X',    // R = X
+                    70: 'X',    // F = X
+                    49: 'Y',    // 1 = Y
+
+                    // Shoulder buttons
+                    69: 'RT',   // E = RT
+                    81: 'LT',   // Q = LT
+                    90: 'LB',   // Z = LB
+                    88: 'RB',   // X = RB
+
+                    // Stick buttons
+                    16: 'L3',   // Shift = L3
+                    86: 'R3',   // V = R3
+
+                    // Menu buttons
+                    13: 'START',  // Enter = START
+                    9: 'SELECT',  // Tab = SELECT
+
+                    // D-pad
                     38: 'STICK_UP', 40: 'STICK_DOWN',
                     37: 'STICK_LEFT', 39: 'STICK_RIGHT'
                 };
@@ -530,6 +600,46 @@ disconnect: function() {
                 }
             },
 
+            // Input blocking control
+            setBlockKeyboardInputs: function(block) {
+                const wasBlocking = config.blockKeyboardInputs;
+                config.blockKeyboardInputs = block;
+                saveConfig();
+
+                console.log(`[FakeGamepad] Keyboard blocking ${block ? 'enabled' : 'disabled'}`);
+
+                if (block && !wasBlocking) {
+                    // Need to add listeners for blocking
+                    if (!keydownListener) {
+                        addEventListeners();
+                        console.log('[FakeGamepad] Added event listeners for blocking');
+                    }
+                } else if (!block && wasBlocking) {
+                    // Check if we should remove listeners
+                    if (!config.connected && !config.enabled) {
+                        removeEventListeners();
+                        console.log('[FakeGamepad] Removed event listeners - no blocking needed');
+                    }
+                }
+
+                notifyIPC('blockingChanged', { blocking: block });
+                return { success: true, message: `Keyboard input blocking ${block ? 'enabled' : 'disabled'}` };
+            },
+
+            isBlockingKeyboardInputs: function() {
+                return config.blockKeyboardInputs !== false; // Default to true for security
+            },
+
+            // Get which keys are currently mapped (for UI feedback)
+            getMappedKeys: function() {
+                return Object.keys(config.keyMappings).map(Number);
+            },
+
+            // Check if a specific key is mapped
+            isKeyMapped: function(keyCode) {
+                return keyCode in config.keyMappings;
+            },
+
             // Utility functions
             getAvailableButtons: function() {
                 return Object.keys(controllerButtons);
@@ -557,11 +667,17 @@ disconnect: function() {
 
         // Apply saved configuration
         updateControllerType();
+
+        // Add event listeners if we need them for blocking or if connected
+        if (config.blockKeyboardInputs || config.connected) {
+            addEventListeners();
+        }
+
         if (config.connected) {
-            window.FakeGamepadAPI.connect();
+            connectGamepad();
         }
         if (config.enabled) {
-            window.FakeGamepadAPI.enable();
+            // Enable is just a flag, doesn't need special setup
         }
 
         console.log("✅ Enhanced Fake Gamepad API loaded successfully!");
