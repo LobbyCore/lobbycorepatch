@@ -417,20 +417,29 @@
                 return { success: true, message: "Fake gamepad connected" };
             },
 
-            disconnect: function() {
-                config.connected = false;
-
-                // Only remove listeners if blocking is also disabled
-                if (!config.blockKeyboardInputs) {
-                    removeEventListeners();
-                }
-
-                disconnectGamepad();
-                saveConfig();
-                notifyIPC('disconnected', { success: true });
-                console.log('[FakeGamepad] Disconnected');
-                return { success: true, message: "Fake gamepad disconnected" };
-            },
+           disconnect: function() {
+    config.connected = false;
+    
+    // Automatically disable blocking when disconnecting
+    if (config.blockKeyboardInputs) {
+        config.blockKeyboardInputs = false;
+        if (keydownListener) {
+            removeEventListeners();
+        }
+        console.log('[FakeGamepad] Auto-disabled keyboard blocking on disconnect');
+    }
+    
+    // Only remove listeners if blocking is also disabled
+    if (!config.blockKeyboardInputs) {
+        removeEventListeners();
+    }
+    
+    disconnectGamepad();
+    saveConfig();
+    notifyIPC('disconnected', { success: true });
+    console.log('[FakeGamepad] Disconnected');
+    return { success: true, message: "Fake gamepad disconnected" };
+},
 
             // Enable/disable (different from connect - this controls input processing)
             enable: function() {
@@ -439,11 +448,21 @@
                 return { success: true, message: "Input processing enabled" };
             },
 
-            disable: function() {
-                config.enabled = false;
-                saveConfig();
-                return { success: true, message: "Input processing disabled" };
-            },
+         disable: function() {
+            config.enabled = false;
+    
+    // Automatically disable blocking when disabling
+               if (config.blockKeyboardInputs) {
+                config.blockKeyboardInputs = false;
+                if (keydownListener) {
+            removeEventListeners();
+                }
+            console.log('[FakeGamepad] Auto-disabled keyboard blocking on disable');
+            }
+    
+    saveConfig();
+    return { success: true, message: "Input processing disabled" };
+},
 
             // Status and configuration
             getStatus: function() {
