@@ -10,7 +10,6 @@
 // @exclude      https://www.xbox.com/*/xbox-game-pass/play-day-one
 // @run-at       document-start
 // @grant        none
-// @downloadURL  https://github.com/redphx/better-xcloud/releases/latest/download/better-xcloud.user.js
 // ==/UserScript==
 "use strict";
 class BxLogger {
